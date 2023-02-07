@@ -10,6 +10,12 @@ import utils.plots as plt
 from utils import rend_util
 from collections import defaultdict
 import logging
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except:
+    WANDB_AVAILABLE = False
+    pass
 class AverageMeter(object):
     def __init__(self):
         self.loss_dict = defaultdict(list)
@@ -178,6 +184,17 @@ class VolSDFTrainRunner():
         self.logger = logger
         self.log_freq = 1 if kwargs['verbose'] else len(self.train_dataloader)
         
+        if kwargs['wandb'] and WANDB_AVAILABLE:
+            wandb.init(project="NEAT", 
+                name='{}/{}/{}'.format(
+                    self.conf.train.expname,
+                    scan_id,
+                    self.timestamp),
+                config=self.conf.as_plain_ordered_dict(), 
+                dir=self.expdir)
+            self.wandb = True
+        else:
+            self.wandb = False
 
     def save_checkpoints(self, epoch):
         torch.save(
@@ -273,7 +290,8 @@ class VolSDFTrainRunner():
                 model_outputs = self.model(model_input)
                 loss_output = self.loss(model_outputs, ground_truth)
                 loss = loss_output['loss']
-                loss_meters.push(loss_output)
+                with torch.no_grad():
+                    loss_meters.push(loss_output)
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -297,6 +315,8 @@ class VolSDFTrainRunner():
                         psnr.item(),
                                 loss_meters()['psnr'].item(),
                                 ))
+                    if self.wandb:
+                        wandb.log(loss_meters(), step=epoch*self.n_batches + data_index)
 
                 self.train_dataset.change_sampling_idx(self.num_pixels)
                 self.scheduler.step()

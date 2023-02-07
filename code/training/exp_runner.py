@@ -24,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--cancel_vis', default=False, action="store_true",
                         help='If set, cancel visualization in intermediate epochs.')
     parser.add_argument('--verbose', default=False, action='store_true')
+    parser.add_argument('--wandb', default=False, action='store_true', help='enable wandb')
 
     opt = parser.parse_args()
 
@@ -47,6 +48,7 @@ if __name__ == '__main__':
                                     scan_id=opt.scan_id,
                                     do_vis=not opt.cancel_vis,
                                     verbose = opt.verbose,
+                                    wandb = opt.wandb
                                     )
 
     trainrunner.run()

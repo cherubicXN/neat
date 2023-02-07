@@ -20,11 +20,12 @@ class AverageMeter(object):
     def __init__(self):
         self.loss_dict = defaultdict(list)
         
+    @torch.no_grad()
     def push(self, loss_dict):
         with torch.no_grad():
             for key, val in loss_dict.items():
                 self.loss_dict[key].append(val)
-    
+    @torch.no_grad()
     def __call__(self):
         out_dict = {}
         for key, val in self.loss_dict.items():
@@ -301,7 +302,12 @@ class VolSDFTrainRunner():
                                           ground_truth['rgb'].cuda().reshape(-1,3))
                 loss_meters.push({'psnr': psnr})
                 loss_msg = []
+
                 for key in loss_output.keys():
+                    # if torch.isnan(loss_meters()[key]):
+                    #     print('nan detected')
+                        
+                    #     import pdb; pdb.set_trace()
                     loss_msg.append('{} = {:.3f} ({:.3f})'.format(key, loss_output[key].item(),loss_meters()[key].item()))
                 loss_msg = ' '.join(loss_msg)
 
@@ -315,7 +321,7 @@ class VolSDFTrainRunner():
                         psnr.item(),
                                 loss_meters()['psnr'].item(),
                                 ))
-                    if self.wandb and self.log_freq>1:
+                    if self.wandb and self.log_freq==1:
                         wandb.log(loss_meters(), step=epoch*self.n_batches + data_index)
                     elif self.wandb:
                         wandb.log(loss_meters(), step=epoch)

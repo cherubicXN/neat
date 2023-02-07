@@ -315,8 +315,10 @@ class VolSDFTrainRunner():
                         psnr.item(),
                                 loss_meters()['psnr'].item(),
                                 ))
-                    if self.wandb:
+                    if self.wandb and self.log_freq>1:
                         wandb.log(loss_meters(), step=epoch*self.n_batches + data_index)
+                    elif self.wandb:
+                        wandb.log(loss_meters(), step=epoch)
 
                 self.train_dataset.change_sampling_idx(self.num_pixels)
                 self.scheduler.step()

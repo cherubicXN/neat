@@ -78,6 +78,11 @@ class VolSDFTrainRunner():
         # create checkpoints dirs
         self.checkpoints_path = os.path.join(self.expdir, self.timestamp, 'checkpoints')
         utils.mkdir_ifnotexists(self.checkpoints_path)
+
+        # create junction dirs
+        self.junctions_path = os.path.join(self.expdir, self.timestamp, 'junctions')
+        utils.mkdir_ifnotexists(self.junctions_path)
+
         self.model_params_subdir = "ModelParameters"
         self.optimizer_params_subdir = "OptimizerParameters"
         self.scheduler_params_subdir = "SchedulerParameters"
@@ -279,11 +284,11 @@ class VolSDFTrainRunner():
                          )
 
                 self.model.train()
+
             self.model.eval()
             with torch.no_grad():
-                global_junctions = self.model.ffn(self.model.latents).cpu().numpy().tolist()
-                with open(os.path.join(self.expdir, self.timestamp, 'junctions.json'), 'a') as f:
-                    json.dump({epoch: global_junctions}, f)
+                global_junctions = self.model.ffn(self.model.latents).cpu()
+            torch.save(global_junctions, os.path.join(self.junctions_path, str(epoch) + '.pth'))
                 
 
             self.train_dataset.change_sampling_idx(self.num_pixels)
@@ -323,7 +328,7 @@ class VolSDFTrainRunner():
                 
                 if (data_index+1) % self.log_freq == 0:
                     self.logger.info(
-                        '{0}_{1} [{2}] ({3}/{4}): {5}, psnr = {6} ({7:.3f})'
+                        '{0}/{1} [{2}] ({3}/{4}): {5}, psnr = {6} ({7:.3f})'
                         .format(self.expname, self.timestamp, epoch, data_index, self.n_batches, 
                         loss_msg,
                         psnr.item(),

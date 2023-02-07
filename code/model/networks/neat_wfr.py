@@ -281,6 +281,8 @@ class VolSDFNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(256, 3))
 
+        self.dbscan_enabled = conf.get_bool('dbscan_enabled', default=True)
+
     def project2D(self, K,R,T, points3d):
         shape = points3d.shape 
         assert shape[-1] == 3
@@ -365,10 +367,12 @@ class VolSDFNetwork(nn.Module):
         lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d.detach())
         lines2d_calib = self.project2D(torch.eye(3).cuda(), R, T, lines3d)
         
-
-
         if self.training:
-            junctions3d = self.cluster_dbscan(lines3d.detach().cpu().numpy().reshape(-1,3),eps=0.01,min_samples=2)
+            
+            if self.dbscan_enabled:
+                junctions3d = self.cluster_dbscan(lines3d.detach().cpu().numpy().reshape(-1,3),eps=0.01,min_samples=2)
+            else:
+                junctions3d = lines3d.detach().reshape(-1,3)
             junctions2d = self.project2D(intrinsics[0,:3,:3], R, T, junctions3d)
             junctions2d_calib = self.project2D(torch.eye(3).cuda(), R, T, junctions3d)
             junctions2d_gt = input['wireframe'][0].vertices.cuda()

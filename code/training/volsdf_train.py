@@ -10,6 +10,7 @@ import utils.plots as plt
 from utils import rend_util
 from collections import defaultdict
 import logging
+import json
 try:
     import wandb
     WANDB_AVAILABLE = True
@@ -278,11 +279,18 @@ class VolSDFTrainRunner():
                          )
 
                 self.model.train()
+            self.model.eval()
+            with torch.no_grad():
+                global_junctions = self.model.ffn(self.model.latents).cpu().numpy().tolist()
+                with open(os.path.join(self.expdir, self.timestamp, 'junctions.json'), 'a') as f:
+                    json.dump({epoch: global_junctions}, f)
+                
 
             self.train_dataset.change_sampling_idx(self.num_pixels)
 
             loss_meters = AverageMeter()
             
+            self.model.train()
             for data_index, (indices, model_input, ground_truth) in enumerate(self.train_dataloader):
                 model_input["intrinsics"] = model_input["intrinsics"].cuda()
                 model_input["uv"] = model_input["uv"].cuda()

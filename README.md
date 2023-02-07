@@ -19,4 +19,5 @@
 - Plan
   - [ ] Checking if the online clustering is necessary
   - [ ] Using junctions for SDF and NEAT field learning
-  - [ ] Other scenes
+  - [ ] Other scenes (e.g., LLFF, Apple's dataset)
+  - [ ] Query 3D lines

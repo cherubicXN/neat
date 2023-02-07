@@ -282,6 +282,7 @@ class VolSDFNetwork(nn.Module):
             nn.Linear(256, 3))
 
         self.dbscan_enabled = conf.get_bool('dbscan_enabled', default=True)
+        self.use_median = conf.get_bool('use_median', default=False)
 
     def project2D(self, K,R,T, points3d):
         shape = points3d.shape 
@@ -378,7 +379,12 @@ class VolSDFNetwork(nn.Module):
             junctions2d_gt = input['wireframe'][0].vertices.cuda()
             jcost = torch.sum((junctions2d[None]-junctions2d_gt[:,None])**2,dim=-1).sqrt()
             jassign = linear_sum_assignment(jcost.cpu())
-            is_correct = jcost[jassign[0],jassign[1]]<10
+            
+            if self.use_median:
+                median = jcost[jassign[0],jassign[1]].detach().median()
+                is_correct = jcost[jassign[0],jassign[1]]<median
+            else:
+                is_correct = jcost[jassign[0],jassign[1]]<10
             junctions3d = junctions3d[jassign[1]][is_correct]
             junctions2d = junctions2d[jassign[1]][is_correct]
             junctions2d_calib = junctions2d_calib[jassign[1]][is_correct]
@@ -407,18 +413,9 @@ class VolSDFNetwork(nn.Module):
             t = t.detach()
             l3d = line_ray_o + line_ray_d*t.unsqueeze(-1)
             points3d_sdf, points_features, points_gradients = self.implicit_network.get_outputs(l3d)
-            # lines3d  = self.attraction_network.forward(l3d.detach(), points_gradients.detach(), points_features.detach())
-            # lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
+            lines3d  = self.attraction_network.forward(l3d.detach(), points_gradients.detach(), points_features.detach())
+            lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
             output['l3d'] = l3d
-        # att_dis1, att_id1 = torch.norm(lines3d[:,None,0].detach() - junctions3d[None],p=2,dim=-1).min(dim=1)
-        # att_dis2, att_id2 = torch.norm(lines3d[:,None,1].detach() - junctions3d[None],p=2,dim=-1).min(dim=1)
-        # att_dis_mean = (att_dis1+att_dis2)/2
-        # att_id_pair = torch.stack((torch.min(att_id1,att_id2),torch.max(att_id1,att_id2)),dim=1)
-        # att_status = (att_dis_mean < torch.norm(lines3d[:,0]-lines3d[:,1],dim=-1,p=2)*0.1)
-
-        # trimesh.load_path(junctions3d[att_id_pair[att_status].unique(dim=0)].cpu()).show()
-        # cost = torch.sum((junctions3d[None]-junctions3d_global[:,None])**2,dim=-1)
-        # j3d_assign = linear_sum_assignment(cost.detach().cpu())
 
         output['points3d'] = points3d
         # output['points3d_att'] = points3d_att

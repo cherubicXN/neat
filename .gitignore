@@ -2,3 +2,4 @@ data/*
 **/*.ply
 # add macosx files
 **/.DS_Store
+exps/*

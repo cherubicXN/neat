@@ -9,9 +9,11 @@
     - Huganrian Matching is extensively used to make connections between line segments and global junctions (latents)
     - Works well on DTU dataset with great generalization ability across scenes
     - dbscan is used for online clustering
-  
+  - confs
+    - https://github.com/cherubicXN/neat/blob/13f12085a042f742e572f6421fe80363305bf8f2/code/confs/dtu-wfr.conf
+    - https://github.com/cherubicXN/neat/blob/13f12085a042f742e572f6421fe80363305bf8f2/code/confs/bmvs-wfr.conf
 
 - Plan
   - [ ] Checking if the online clustering is necessary
   - [ ] Using junctions for SDF and NEAT field learning
-  - [ ] 
+  - [ ] Other scenes

@@ -3,3 +3,5 @@ data/*
 # add macosx files
 **/.DS_Store
 exps/*
+# add python cache
+**/__pycache__/*

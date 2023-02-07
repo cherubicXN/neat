@@ -122,6 +122,8 @@ class VolSDFLoss(nn.Module):
             'j2d_stat': loss_j2d_u,
             'count': count
         }
+        if 'median' in model_outputs:
+            output['median'] = model_outputs['median']
         # if self.steps>500:
       
         return output

@@ -383,6 +383,7 @@ class VolSDFNetwork(nn.Module):
             if self.use_median:
                 median = jcost[jassign[0],jassign[1]].detach().median()
                 is_correct = jcost[jassign[0],jassign[1]]<median
+                output['median'] = median
             else:
                 is_correct = jcost[jassign[0],jassign[1]]<10
             junctions3d = junctions3d[jassign[1]][is_correct]

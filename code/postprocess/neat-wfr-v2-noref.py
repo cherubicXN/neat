@@ -183,9 +183,14 @@ def wireframe_recon(**kwargs):
     gjc_dict = defaultdict(list)
     trimesh.points.PointCloud(global_junctions.cpu().numpy()).show()
 
-    graph = torch.zeros((global_junctions.shape[0],global_junctions.shape[0]))
-    ix, iy = torch.triu_indices(graph.shape[0], graph.shape[1], offset=1)
+    glj_sdf, glj_feats, glj_grad = model.implicit_network.get_outputs(global_junctions)
+    
+    global_junctions = (global_junctions - glj_sdf*glj_grad).detach()
+    # global_junctions = global_junctions[glj_sdf[:,0].abs()<0.01].detach()
+    # ix, iy = torch.triu_indices(graph.shape[0], graph.shape[1], offset=1)
+    trimesh.points.PointCloud(global_junctions.cpu().numpy()).show()
 
+    
     global_junctions_vis = torch.zeros((global_junctions.shape[0]))
     for indices, model_input, ground_truth in tqdm(eval_dataloader):    
         mask = model_input['mask']
@@ -215,7 +220,38 @@ def wireframe_recon(**kwargs):
         source_idx = jassign[0][jcost_assign.cpu().numpy()<5]
         target_idx = is_inside.nonzero().flatten()[jassign[1]][jcost_assign.cpu().numpy()<5]
         global_junctions_vis[target_idx] += 1
-    import pdb; pdb.set_trace()
+
+    global_junctions = global_junctions[global_junctions_vis>0]
+    ix, iy = torch.triu_indices(global_junctions.shape[0], global_junctions.shape[0], offset=1)
+    graph = torch.zeros((global_junctions.shape[0],global_junctions.shape[0])).cuda()
+
+    enumerated_indices = torch.stack((ix,iy),dim=-1)
+    
+    for split in tqdm(torch.split(enumerated_indices,1024)):
+        lines3d = global_junctions[split]
+        tspan = torch.linspace(0,1,32).reshape(1,-1,1).cuda()
+        points3d = lines3d[:,:1]*tspan + lines3d[:,1:]*(1-tspan)
+        points3d_flt = points3d.reshape(-1,3)
+
+        torch.cuda.empty_cache()
+        sdf_, feats_, grads_ = model.implicit_network.get_outputs(points3d_flt)
+        sdf = sdf_.reshape(-1,32).detach()
+        is_small = sdf.abs()<0.01
+        cnt = is_small.sum(dim=-1)/32
+        graph[split[:,0],split[:,1]] += (cnt>0.9)
+        
+        # lines3d_mlp = model.attraction_network(points3d_flt,feats_,grads_).detach()
+        # lines3d_mlp = lines3d_mlp.reshape(-1,32,2,3)
+        # lines3d_dir = lines3d_mlp[:,:,0] - lines3d_mlp[:,:,1]
+        # lines3d_dir = lines3d_dir/torch.norm(lines3d_dir,dim=-1,keepdim=True)
+        # main_dir = lines3d[:,0] - lines3d[:,1]
+        # main_dir = main_dir/torch.norm(main_dir,dim=-1,keepdim=True)
+        # angle_consistency = torch.sum(lines3d_dir*main_dir[:,None],dim=-1).abs()
+
+        # is_consistent = (torch.sum(angle_consistency<0.05,dim=-1)/32 > 0.9)
+        # lines3d_all.append(lines3d[cnt>0.8])
+
+    # trimesh.load_path(torch.cat(lines3d_all).cpu()).show()
         # # import matplotlib.pyplot as plt
         # # plt.plot(junctions2d_gt[:,0].cpu().numpy(),junctions2d_gt[:,1].cpu().numpy(),'r.')
         # # plt.plot(junctions2d[is_inside][:,0].cpu().numpy(),junctions2d[is_inside][:,1].cpu().numpy(),'b.')
@@ -234,7 +270,7 @@ def wireframe_recon(**kwargs):
         # graph[ii[lcost<10],jj[lcost<10]] +=1
 
 
-    lines3d_wf = global_junctions[(graph>0).nonzero()]
+    lines3d_wf = global_junctions[(graph.triu()>0).nonzero()]
     np.savez(line_path,lines3d=lines3d_wf.cpu().numpy())#scores=scores_all,cameras=cameras),#scores=scores_all,points3d_all=points3d_all)
     print('save the reconstructed wireframes to {}'.format(line_path))
     print('python evaluation/show.py --data {}'.format(line_path))

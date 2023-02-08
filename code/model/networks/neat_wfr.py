@@ -283,6 +283,7 @@ class VolSDFNetwork(nn.Module):
 
         self.dbscan_enabled = conf.get_bool('dbscan_enabled', default=True)
         self.use_median = conf.get_bool('use_median', default=False)
+        self.junction_eikonal = conf.get_bool('junction_eikonal', default=False)
 
     def project2D(self, K,R,T, points3d):
         shape = points3d.shape 
@@ -441,8 +442,11 @@ class VolSDFNetwork(nn.Module):
             eik_near_points = (cam_loc.unsqueeze(1) + z_samples_eik.unsqueeze(2) * ray_dirs.unsqueeze(1)).reshape(-1, 3)
             eikonal_points = torch.cat([eikonal_points, eik_near_points], 0)
 
+            if self.junction_eikonal:
+                eikonal_points = torch.cat([eikonal_points, junctions3d_global], 0)
             grad_theta = self.implicit_network.gradient(eikonal_points)
             output['grad_theta'] = grad_theta
+
 
         if not self.training:
             gradients = gradients.detach()

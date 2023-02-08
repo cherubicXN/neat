@@ -3,6 +3,9 @@ import sys
 sys.path.append('../code')
 import argparse
 import GPUtil
+import torch
+import random
+import numpy as np 
 
 from training.volsdf_train import VolSDFTrainRunner
 if __name__ == '__main__':
@@ -24,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--cancel_vis', default=False, action="store_true",
                         help='If set, cancel visualization in intermediate epochs.')
     parser.add_argument('--verbose', default=False, action='store_true')
+    parser.add_argument('--seed', default=42, type = int, help = 'seed for random number generator')
     parser.add_argument('--wandb', default=False, action='store_true', help='enable wandb')
 
     opt = parser.parse_args()
@@ -35,6 +39,9 @@ if __name__ == '__main__':
     else:
         gpu = opt.gpu
     
+    torch.manual_seed(opt.seed)
+    random.seed(opt.seed)
+    np.random.seed(opt.seed)
 
     trainrunner = VolSDFTrainRunner(conf=opt.conf,
                                     batch_size=opt.batch_size,

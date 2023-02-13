@@ -104,24 +104,49 @@ def get_overlap_orth_line_dist(line_seg1, line_seg2, min_overlap=0.5):
     return line_dists
 
 
-def wireframe_recon(**kwargs):
+
+# def wireframe_recon(**kwargs):
+def wireframe_recon(conf, 
+                    expname, 
+                    exps_folder_name, 
+                    evals_folder_name, 
+                    timestamp, 
+                    checkpoint, 
+                    scan_id, 
+                    **kwargs):
+    """
+        wireframe_recon(conf=opt.conf,
+        expname=opt.expname,
+        exps_folder_name=opt.exps_folder,
+        evals_folder_name=opt.evals_folder,
+        timestamp=opt.timestamp,
+        checkpoint=opt.checkpoint,
+        scan_id=opt.scan_id,
+        chunksize=opt.chunksize,
+        distance=opt.dis_th,
+        score=opt.score_th,
+    )
+
+    """
     torch.set_default_dtype(torch.float32)
     torch.set_num_threads(1)
 
-    conf = ConfigFactory.parse_file(kwargs['conf'])
-    exps_folder_name = kwargs['exps_folder_name']
-    evals_folder_name = kwargs['evals_folder_name']
+    # conf = ConfigFactory.parse_file(kwargs['conf'])
+    conf = ConfigFactory.parse_file(conf)
+    # exps_folder_name = kwargs['exps_folder_name']
+    # evals_folder_name = kwargs['evals_folder_name']
 
-    expname = conf.get_string('train.expname') + kwargs['expname']
-    scan_id = kwargs['scan_id'] if kwargs['scan_id'] != -1 else conf.get_int('dataset.scan_id', default=-1)
+    expname = conf.get_string('train.expname') + expname
+    if scan_id == -1:
+        scan_id = conf.get_int('dataset.scan_id', default=-1)
     if scan_id != -1:
         expname = expname + '/{0}'.format(scan_id)
 
     utils.mkdir_ifnotexists(os.path.join('../', evals_folder_name))
     expdir = os.path.join('../', exps_folder_name, expname)
-    timestamp = kwargs['timestamp']
+    # timestamp = kwargs['timestamp']
     if timestamp is None:
-        timestamp = sweep_ckpt(expdir, kwargs['checkpoint'])
+        timestamp = sweep_ckpt(expdir,checkpoint)
 
     # evaldir = os.path.join('../', evals_folder_name, expname)
     evaldir = os.path.join(expdir, timestamp )
@@ -141,10 +166,10 @@ def wireframe_recon(**kwargs):
         model.cuda()
 
     old_checkpnts_dir = os.path.join(expdir, timestamp, 'checkpoints')
-    checkpoint_path = os.path.join(old_checkpnts_dir, 'ModelParameters', str(kwargs['checkpoint']) + ".pth")
+    checkpoint_path = os.path.join(old_checkpnts_dir, 'ModelParameters', str(checkpoint) + ".pth")
 
     print('Checkpoint: {}'.format(checkpoint_path))
-    saved_model_state = torch.load(os.path.join(old_checkpnts_dir, 'ModelParameters', str(kwargs['checkpoint']) + ".pth"))
+    saved_model_state = torch.load(os.path.join(old_checkpnts_dir, 'ModelParameters', checkpoint + ".pth"))
 
     model.load_state_dict(saved_model_state['model_state_dict'])
     epoch = saved_model_state['epoch']
@@ -165,7 +190,7 @@ def wireframe_recon(**kwargs):
     wireframe_dir = os.path.join(evaldir,'wireframes')
     utils.mkdir_ifnotexists(wireframe_dir)
 
-    line_path = os.path.join(wireframe_dir,'{}-v2-noref.npz'.format(kwargs['checkpoint']))
+    line_path = os.path.join(wireframe_dir,'{}-v2-noref.npz'.format(checkpoint))
 
     chunksize = kwargs['chunksize']
 
@@ -181,14 +206,14 @@ def wireframe_recon(**kwargs):
     
     global_junctions = model.ffn(model.latents).detach()
     gjc_dict = defaultdict(list)
-    trimesh.points.PointCloud(global_junctions.cpu().numpy()).show()
+    # trimesh.points.PointCloud(global_junctions.cpu().numpy()).show()
 
     glj_sdf, glj_feats, glj_grad = model.implicit_network.get_outputs(global_junctions)
     
     global_junctions = (global_junctions - glj_sdf*glj_grad).detach()
     # global_junctions = global_junctions[glj_sdf[:,0].abs()<0.01].detach()
     # ix, iy = torch.triu_indices(graph.shape[0], graph.shape[1], offset=1)
-    trimesh.points.PointCloud(global_junctions.cpu().numpy()).show()
+    # trimesh.points.PointCloud(global_junctions.cpu().numpy()).show()
 
     
     global_junctions_vis = torch.zeros((global_junctions.shape[0]))
@@ -217,8 +242,8 @@ def wireframe_recon(**kwargs):
 
         jassign = linear_sum_assignment(jcost.cpu().numpy())
         jcost_assign = jcost[jassign[0],jassign[1]]
-        source_idx = jassign[0][jcost_assign.cpu().numpy()<5]
-        target_idx = is_inside.nonzero().flatten()[jassign[1]][jcost_assign.cpu().numpy()<5]
+        source_idx = jassign[0][jcost_assign.cpu().numpy()<10]
+        target_idx = is_inside.nonzero().flatten()[jassign[1]][jcost_assign.cpu().numpy()<10]
         global_junctions_vis[target_idx] += 1
 
     global_junctions = global_junctions[global_junctions_vis>0]
@@ -240,35 +265,6 @@ def wireframe_recon(**kwargs):
         cnt = is_small.sum(dim=-1)/32
         graph[split[:,0],split[:,1]] += (cnt>0.9)
         
-        # lines3d_mlp = model.attraction_network(points3d_flt,feats_,grads_).detach()
-        # lines3d_mlp = lines3d_mlp.reshape(-1,32,2,3)
-        # lines3d_dir = lines3d_mlp[:,:,0] - lines3d_mlp[:,:,1]
-        # lines3d_dir = lines3d_dir/torch.norm(lines3d_dir,dim=-1,keepdim=True)
-        # main_dir = lines3d[:,0] - lines3d[:,1]
-        # main_dir = main_dir/torch.norm(main_dir,dim=-1,keepdim=True)
-        # angle_consistency = torch.sum(lines3d_dir*main_dir[:,None],dim=-1).abs()
-
-        # is_consistent = (torch.sum(angle_consistency<0.05,dim=-1)/32 > 0.9)
-        # lines3d_all.append(lines3d[cnt>0.8])
-
-    # trimesh.load_path(torch.cat(lines3d_all).cpu()).show()
-        # # import matplotlib.pyplot as plt
-        # # plt.plot(junctions2d_gt[:,0].cpu().numpy(),junctions2d_gt[:,1].cpu().numpy(),'r.')
-        # # plt.plot(junctions2d[is_inside][:,0].cpu().numpy(),junctions2d[is_inside][:,1].cpu().numpy(),'b.')
-        # # plt.show()
-        
-        # ii,jj = torch.meshgrid(target_idx,target_idx)
-        # ii = ii.reshape(-1)
-        # jj = jj.reshape(-1)
-        # temp = ii<jj
-        # ii = ii[temp]
-        # jj = jj[temp]
-
-        # lines3d = torch.stack((global_junctions[ii],global_junctions[jj]),dim=1)
-        # lines2d = model.project2D(K,R,T,lines3d).reshape(-1,4)
-        # lcost = torch.sum((lines2d[:,None]-lines2d_gt[None])**2,dim=-1).min(dim=1)[0]
-        # graph[ii[lcost<10],jj[lcost<10]] +=1
-
 
     lines3d_wf = global_junctions[(graph.triu()>0).nonzero()]
     np.savez(line_path,lines3d=lines3d_wf.cpu().numpy())#scores=scores_all,cameras=cameras),#scores=scores_all,points3d_all=points3d_all)
@@ -289,15 +285,12 @@ if __name__ == '__main__':
     parser.add_argument('--exps_folder', type=str, default='exps', help='The experiments folder name.')
     parser.add_argument('--evals_folder', type=str, default='evals', help='The evaluation folder name.')
     parser.add_argument('--gpu', type=str, default='auto', help='GPU to use [default: GPU auto]')
-    # parser.add_argument('--timestamp', required=True, type=str, help='The experiemnt timestamp to test.')
     parser.add_argument('--timestamp', default=None, type=str, help='The experiemnt timestamp to test.')
     parser.add_argument('--checkpoint', default='latest',type=str,help='The trained model checkpoint to test')
     parser.add_argument('--scan_id', type=int, default=-1, help='If set, taken to be the scan id.')
-    parser.add_argument('--resolution', default=512, type=int, help='Grid resolution for marching cube')
     parser.add_argument('--chunksize', default=2048, type=int, help='the chunksize for rendering')
     parser.add_argument('--dis-th', default=1, type=int, help='the distance threshold of 2D line segments')
     parser.add_argument('--score-th', default=0.05, type=float, help='the score threshold of 2D line segments')
-    parser.add_argument('--preview', default=0, type=int )
 
     opt = parser.parse_args()
 
@@ -309,6 +302,7 @@ if __name__ == '__main__':
     
     if (not gpu == 'ignore'):
         os.environ["CUDA_VISIBLE_DEVICES"] = '{0}'.format(gpu)
+    
     wireframe_recon(conf=opt.conf,
         expname=opt.expname,
         exps_folder_name=opt.exps_folder,
@@ -316,9 +310,7 @@ if __name__ == '__main__':
         timestamp=opt.timestamp,
         checkpoint=opt.checkpoint,
         scan_id=opt.scan_id,
-        resolution=opt.resolution,
         chunksize=opt.chunksize,
         distance=opt.dis_th,
         score=opt.score_th,
-        preview = opt.preview
     )

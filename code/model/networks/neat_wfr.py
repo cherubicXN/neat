@@ -273,14 +273,24 @@ class VolSDFNetwork(nn.Module):
 
         self.density = LaplaceDensity(**conf.get_config('density'))
         self.ray_sampler = ErrorBoundSampler(self.scene_bounding_sphere, **conf.get_config('ray_sampler'))
-        self.latents = nn.Parameter(torch.randn(1024, 256))
-        self.ffn = nn.Sequential(
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, 3))
 
+        conf_junctions = conf.get_config('global_junctions')
+        self.latents = nn.Parameter(torch.randn(conf_junctions.get_int('num_junctions',default=1024), conf_junctions.get_int('dim_hidden',default=256))*10)
+
+        ffn = []
+        for i in range(conf_junctions.get_int('num_layers',default=2)):
+            ffn.append(nn.Linear(conf_junctions.get_int('dim_hidden',default=256), conf_junctions.get_int('dim_hidden',default=256)))
+            ffn.append(nn.ReLU())
+        ffn.append(nn.Linear(conf_junctions.get_int('dim_hidden',default=256), 3))
+
+        self.ffn = nn.Sequential(*ffn)
+        # self.ffn = nn.Sequential(
+        #     nn.Linear(256, 256),
+        #     nn.ReLU(),
+        #     nn.Linear(256, 256),
+        #     nn.ReLU(),
+        #     nn.Linear(256, 3))
+        # import pdb; pdb.set_trace()
         self.dbscan_enabled = conf.get_bool('dbscan_enabled', default=True)
         self.use_median = conf.get_bool('use_median', default=False)
         self.junction_eikonal = conf.get_bool('junction_eikonal', default=False)

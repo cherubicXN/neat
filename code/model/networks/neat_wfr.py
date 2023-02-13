@@ -275,7 +275,7 @@ class VolSDFNetwork(nn.Module):
         self.ray_sampler = ErrorBoundSampler(self.scene_bounding_sphere, **conf.get_config('ray_sampler'))
 
         conf_junctions = conf.get_config('global_junctions')
-        self.latents = nn.Parameter(torch.randn(conf_junctions.get_int('num_junctions',default=1024), conf_junctions.get_int('dim_hidden',default=256))*10)
+        self.latents = nn.Parameter(torch.randn(conf_junctions.get_int('num_junctions',default=1024), conf_junctions.get_int('dim_hidden',default=256)))
 
         ffn = []
         for i in range(conf_junctions.get_int('num_layers',default=2)):

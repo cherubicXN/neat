@@ -275,13 +275,35 @@ class VolSDFNetwork(nn.Module):
         self.ray_sampler = ErrorBoundSampler(self.scene_bounding_sphere, **conf.get_config('ray_sampler'))
 
         conf_junctions = conf.get_config('global_junctions')
-        self.latents = nn.Parameter(torch.randn(conf_junctions.get_int('num_junctions',default=1024), conf_junctions.get_int('dim_hidden',default=256)))
 
         ffn = []
-        for i in range(conf_junctions.get_int('num_layers',default=2)):
-            ffn.append(nn.Linear(conf_junctions.get_int('dim_hidden',default=256), conf_junctions.get_int('dim_hidden',default=256)))
-            ffn.append(nn.ReLU())
-        ffn.append(nn.Linear(conf_junctions.get_int('dim_hidden',default=256), 3))
+        num_layers = conf_junctions.get_int('num_layers',default=2)
+        # self.latents = nn.Parameter(torch.randn(conf_junctions.get_int('num_junctions',default=1024), conf_junctions.get_int('dim_hidden',default=256)))
+        self.latents = nn.Parameter(torch.empty(conf_junctions.get_int('num_junctions',default=1024), conf_junctions.get_int('dim_hidden',default=256)))
+        # torch.nn.init.normal_(self.latents, mean=0.0, std=2**num_layers)
+        torch.nn.init.normal_(self.latents, mean=0.0, std=1)
+        for i in range(num_layers+1):
+            if i != num_layers:
+                dim_in = conf_junctions.get_int('dim_hidden',default=256)
+                dim_out = conf_junctions.get_int('dim_hidden',default=256)
+            else:
+                dim_in = conf_junctions.get_int('dim_hidden',default=256)
+                dim_out = 3
+            lin = nn.Linear(dim_in,dim_out)
+            # if conf_junctions.get_bool('geometric_init',default=False):
+            #     if i != num_layers:
+            #         torch.nn.init.constant_(lin.bias, 0.0)
+            #         torch.nn.init.normal_(lin.weight, mean=0.0, std=np.sqrt(2)/np.sqrt(dim_out))
+            #     else:
+            #         torch.nn.init.constant_(lin.bias, 0.0)
+            #         torch.nn.init.normal_(lin.weight, mean=np.sqrt(np.pi)/np.sqrt(dim_out), std=0.0001)
+            # if conf_junctions.get_bool('weight_norm',default=False):
+            #     lin = nn.utils.weight_norm(lin)
+            ffn.append(lin)
+
+            if i!= num_layers:
+                ffn.append(nn.ReLU())
+        # ffn.append(nn.Linear(conf_junctions.get_int('dim_hidden',default=256), 3))
 
         self.ffn = nn.Sequential(*ffn)
         # self.ffn = nn.Sequential(

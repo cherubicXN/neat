@@ -110,51 +110,21 @@ def wireframe_recon(**kwargs):
 
     conf_path = kwargs['conf']
     conf = ConfigFactory.parse_file(kwargs['conf'])
-    # if os.path.basename(conf_path) == 'runconf.conf':
-    #     expname = conf.get_string('train.expname')
-    #     split_conf_path = conf_path.split('/')
-    #     index = split_conf_path.index(expname)
-    #     exps_folder_name = os.path.join(*split_conf_path[:index+1])
-    #     scan_id = split_conf_path[index+1]
-    #     timestamp = split_conf_path[index+2]
-    #     # expdir = evaldir = os.path.join(*split_conf_path[:-1])
-    #     expdir = os.path.join(exps_folder_name, expname, scan_id)
-    #     # evaldir = os.path.join(expdir, scan_id, timestamp)
-    #     import pdb; pdb.set_trace()
-    # # conf = ConfigFactory.parse_file(kwargs['conf'])
-    # else:
-    exps_folder_name = kwargs['exps_folder_name']
+    assert os.path.basename(conf_path) == 'runconf.conf'
 
-    expname = conf.get_string('train.expname') + kwargs['expname']
-    scan_id = kwargs['scan_id'] if kwargs['scan_id'] != -1 else conf.get_int('dataset.scan_id', default=-1)
-    if scan_id != -1:
-        expname = expname + '/{0}'.format(scan_id)
-
-# utils.mkdir_ifnotexists(os.path.join('../', evals_folder_name))
-    expdir = os.path.join('../', exps_folder_name, expname)
-    timestamp = kwargs['timestamp']
-    if timestamp is None:
-        timestamp = sweep_ckpt(expdir, kwargs['checkpoint'])
-
-    # evaldir = os.path.join('../', evals_folder_name, expname)
-    evaldir = os.path.join(expdir, timestamp )
-    # utils.mkdir_ifnotexists(evaldir)
-    os.makedirs(evaldir,exist_ok=True)
+    root = os.path.join(*conf_path.split('/')[:-1])
 
     dataset_conf = conf.get_config('dataset')
     dataset_conf['distance_threshold'] = float(kwargs['distance'])
-    if scan_id != -1:
-        dataset_conf['scan_id'] = scan_id
 
     eval_dataset = utils.get_class(conf.get_string('train.dataset_class'))(**dataset_conf)
-
 
     conf_model = conf.get_config('model')
     model = utils.get_class(conf.get_string('train.model_class'))(conf=conf_model)
     if torch.cuda.is_available():
         model.cuda()
 
-    old_checkpnts_dir = os.path.join(expdir, timestamp, 'checkpoints')
+    old_checkpnts_dir = os.path.join(root, 'checkpoints')
     checkpoint_path = os.path.join(old_checkpnts_dir, 'ModelParameters', str(kwargs['checkpoint']) + ".pth")
 
     print('Checkpoint: {}'.format(checkpoint_path))
@@ -176,7 +146,7 @@ def wireframe_recon(**kwargs):
                                                       collate_fn=eval_dataset.collate_fn
                                                       )
 
-    wireframe_dir = os.path.join(evaldir,'wireframes')
+    wireframe_dir = os.path.join(root,'wireframes')
     utils.mkdir_ifnotexists(wireframe_dir)
 
     line_path = os.path.join(wireframe_dir,'{}-wfr.npz'.format(kwargs['checkpoint']))
@@ -187,7 +157,7 @@ def wireframe_recon(**kwargs):
 
     lines3d_all = []
 
-    maskdirs = os.path.join(evaldir,'masks')
+    maskdirs = os.path.join(root,'masks')
     utils.mkdir_ifnotexists(maskdirs)
     
     points3d_all = []
@@ -322,7 +292,7 @@ def wireframe_recon(**kwargs):
         'graph': graph.cpu(),
         'pair': pair.cpu(),
     }
-    import pdb; pdb.set_trace()
+
     np.savez(line_path,lines3d=lines3d_wf.cpu().numpy())#scores=scores_all,cameras=cameras),#scores=scores_all,points3d_all=points3d_all)
     print('save the reconstructed wireframes to {}'.format(line_path))
     print('python evaluation/show.py --data {}'.format(line_path))
@@ -337,19 +307,12 @@ def wireframe_recon(**kwargs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--conf', type=str, required=True)
-    parser.add_argument('--expname', type=str, default='', help='The experiment name to be evaluated.')
-    parser.add_argument('--exps_folder', type=str, default='exps', help='The experiments folder name.')
-    parser.add_argument('--evals_folder', type=str, default='evals', help='The evaluation folder name.')
     parser.add_argument('--gpu', type=str, default='auto', help='GPU to use [default: GPU auto]')
     # parser.add_argument('--timestamp', required=True, type=str, help='The experiemnt timestamp to test.')
-    parser.add_argument('--timestamp', default=None, type=str, help='The experiemnt timestamp to test.')
     parser.add_argument('--checkpoint', default='latest',type=str,help='The trained model checkpoint to test')
-    parser.add_argument('--scan_id', type=int, default=-1, help='If set, taken to be the scan id.')
-    parser.add_argument('--resolution', default=512, type=int, help='Grid resolution for marching cube')
     parser.add_argument('--chunksize', default=2048, type=int, help='the chunksize for rendering')
     parser.add_argument('--dis-th', default=1, type=int, help='the distance threshold of 2D line segments')
     parser.add_argument('--score-th', default=0.05, type=float, help='the score threshold of 2D line segments')
-    parser.add_argument('--preview', default=0, type=int )
 
     opt = parser.parse_args()
 
@@ -362,15 +325,8 @@ if __name__ == '__main__':
     if (not gpu == 'ignore'):
         os.environ["CUDA_VISIBLE_DEVICES"] = '{0}'.format(gpu)
     wireframe_recon(conf=opt.conf,
-        expname=opt.expname,
-        exps_folder_name=opt.exps_folder,
-        evals_folder_name=opt.evals_folder,
-        timestamp=opt.timestamp,
         checkpoint=opt.checkpoint,
-        scan_id=opt.scan_id,
-        resolution=opt.resolution,
         chunksize=opt.chunksize,
         distance=opt.dis_th,
         score=opt.score_th,
-        preview = opt.preview
     )

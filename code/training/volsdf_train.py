@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from pyhocon import ConfigFactory
+from pyhocon.converter import HOCONConverter
 import sys
 import torch
 from tqdm import tqdm
@@ -45,10 +46,12 @@ class VolSDFTrainRunner():
         self.GPU_INDEX = kwargs['gpu_index']
 
         self.expname = self.conf.get_string('train.expname') + kwargs['expname']
+        self.conf.put('train.expname', self.expname)
         scan_id = kwargs['scan_id'] if kwargs['scan_id'] != -1 else self.conf.get_int('dataset.scan_id', default=-1)
         if scan_id != -1:
             self.expname = self.expname + '/{0}'.format(scan_id)
         self.conf.put('dataset.scan_id', scan_id)
+
 
         if kwargs['is_continue'] and kwargs['timestamp'] == 'latest':
             if os.path.exists(os.path.join('../',kwargs['exps_folder_name'],self.expname)):
@@ -91,7 +94,11 @@ class VolSDFTrainRunner():
         utils.mkdir_ifnotexists(os.path.join(self.checkpoints_path, self.model_params_subdir))
         utils.mkdir_ifnotexists(os.path.join(self.checkpoints_path, self.optimizer_params_subdir))
         utils.mkdir_ifnotexists(os.path.join(self.checkpoints_path, self.scheduler_params_subdir))
-        os.system("""cp -r {0} "{1}" """.format(kwargs['conf'], os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
+
+        
+        with open(os.path.join(self.expdir, self.timestamp, 'runconf.conf'), 'w') as f:
+            f.write(HOCONConverter.convert(self.conf))
+        # os.system("""cp -r {0} "{1}" """.format(kwargs['conf'], os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
 
         if (not self.GPU_INDEX == 'ignore'):
             os.environ["CUDA_VISIBLE_DEVICES"] = '{0}'.format(self.GPU_INDEX)

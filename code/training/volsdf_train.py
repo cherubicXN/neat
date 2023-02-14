@@ -99,7 +99,9 @@ class VolSDFTrainRunner():
         
         with open(os.path.join(self.expdir, self.timestamp, 'runconf.conf'), 'w') as f:
             f.write(HOCONConverter.convert(self.conf))
-        import pdb; pdb.set_trace()
+        
+        self.repo.index.add(os.path.abspath(os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
+        self.repo.index.commit('new experiment {0}'.format(self.expdir))
         # os.system("""cp -r {0} "{1}" """.format(kwargs['conf'], os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
 
         if (not self.GPU_INDEX == 'ignore'):

@@ -53,7 +53,8 @@ if __name__ == '__main__':
                                     timestamp=opt.timestamp,
                                     checkpoint=opt.checkpoint,
                                     scan_id=opt.scan_id,
-                                    do_vis=not opt.cancel_vis,
+                                    # do_vis=not opt.cancel_vis,
+                                    do_vis = False,
                                     verbose = opt.verbose,
                                     wandb = opt.wandb
                                     )

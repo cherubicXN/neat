@@ -1,4 +1,5 @@
 import os
+import git
 from datetime import datetime
 from pyhocon import ConfigFactory
 from pyhocon.converter import HOCONConverter
@@ -52,7 +53,7 @@ class VolSDFTrainRunner():
             self.expname = self.expname + '/{0}'.format(scan_id)
         self.conf.put('dataset.scan_id', scan_id)
 
-
+        self.repo =  git.Repo(search_parent_directories=True)
         if kwargs['is_continue'] and kwargs['timestamp'] == 'latest':
             if os.path.exists(os.path.join('../',kwargs['exps_folder_name'],self.expname)):
                 timestamps = os.listdir(os.path.join('../',kwargs['exps_folder_name'],self.expname))
@@ -98,6 +99,7 @@ class VolSDFTrainRunner():
         
         with open(os.path.join(self.expdir, self.timestamp, 'runconf.conf'), 'w') as f:
             f.write(HOCONConverter.convert(self.conf))
+        import pdb; pdb.set_trace()
         # os.system("""cp -r {0} "{1}" """.format(kwargs['conf'], os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
 
         if (not self.GPU_INDEX == 'ignore'):

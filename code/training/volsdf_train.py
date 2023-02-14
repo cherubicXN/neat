@@ -48,6 +48,7 @@ class VolSDFTrainRunner():
         scan_id = kwargs['scan_id'] if kwargs['scan_id'] != -1 else self.conf.get_int('dataset.scan_id', default=-1)
         if scan_id != -1:
             self.expname = self.expname + '/{0}'.format(scan_id)
+        self.conf.put('dataset.scan_id', scan_id)
 
         if kwargs['is_continue'] and kwargs['timestamp'] == 'latest':
             if os.path.exists(os.path.join('../',kwargs['exps_folder_name'],self.expname)):

@@ -202,7 +202,7 @@ class VolSDFTrainRunner():
         logger.addHandler(fh)
         self.logger = logger
         self.log_freq = 1 if kwargs['verbose'] else len(self.train_dataloader)
-        
+        import pdb; pdb.set_trace()
         if kwargs['wandb'] and WANDB_AVAILABLE:
             wandb.init(project="NEAT", 
                 name='{}/{}/{}'.format(
@@ -214,6 +214,11 @@ class VolSDFTrainRunner():
             self.wandb = True
         else:
             self.wandb = False
+
+    def commit_log(self, msg='update log'):
+        log_path = os.path.join(self.expdir,self.timestamp, 'train.log')
+        self.repo.index.add(os.path.abspath(log_path))
+        self.repo.index.commit(msg)
 
     def save_checkpoints(self, epoch):
         torch.save(
@@ -264,6 +269,7 @@ class VolSDFTrainRunner():
 
             if epoch % self.checkpoint_freq == 0:
                 self.save_checkpoints(epoch)
+                self.commit_log('checkpoint at epoch {}'.format(epoch))
 
             if self.do_vis and epoch % self.plot_freq == 0:
                 self.model.eval()

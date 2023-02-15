@@ -314,6 +314,7 @@ class VolSDFNetwork(nn.Module):
         #     nn.Linear(256, 256),
         #     nn.ReLU(),
         #     nn.Linear(256, 3))
+        # temp = self.ffn(self.latents)
         # import pdb; pdb.set_trace()
         self.dbscan_enabled = conf.get_bool('dbscan_enabled', default=True)
         self.use_median = conf.get_bool('use_median', default=False)
@@ -403,12 +404,27 @@ class VolSDFNetwork(nn.Module):
         lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d.detach())
         lines2d_calib = self.project2D(torch.eye(3).cuda(), R, T, lines3d)
         # import pdb; pdb.set_trace()
+        line_ray_d, line_ray_o = rend_util.get_camera_params(input['uv_proj'], pose, intrinsics)
+        line_ray_d = line_ray_d.reshape(-1,3)
+        line_ray_o = line_ray_o.repeat(line_ray_d.shape[0],1)
+        denominator = torch.sum(line_ray_d*points_gradients,dim=-1)
+        denom_eps = torch.where(denominator>=0, 
+            torch.ones_like(denominator)*1e-6,
+            -torch.ones_like(denominator)*1e-6
+            )
+        t = torch.sum((points3d-line_ray_o)*points_gradients,dim=-1)/(denominator+denom_eps)
+        t = t.detach()
+        l3d = line_ray_o + line_ray_d*t.unsqueeze(-1)
+        with torch.no_grad():
+            l3d_score = torch.norm(torch.cross(l3d-lines3d[:,0],l3d-lines3d[:,1]),dim=-1)/torch.norm(lines3d[:,0]-lines3d[:,1],dim=-1)
         if self.training:
             
             if self.dbscan_enabled:
                 junctions3d = self.cluster_dbscan(lines3d.detach().cpu().numpy().reshape(-1,3),eps=0.01,min_samples=2)
             else:
-                junctions3d = lines3d.detach().reshape(-1,3)
+                l3d_score_median = min(l3d_score.median(),0.01)
+                junctions3d = lines3d[l3d_score<l3d_score_median].detach().reshape(-1,3)
+                # junctions3d = lines3d.detach().reshape(-1,3)
             junctions2d = self.project2D(intrinsics[0,:3,:3], R, T, junctions3d)
             junctions2d_calib = self.project2D(torch.eye(3).cuda(), R, T, junctions3d)
             junctions2d_gt = input['wireframe'][0].vertices.cuda()
@@ -425,7 +441,6 @@ class VolSDFNetwork(nn.Module):
             junctions2d = junctions2d[jassign[1]][is_correct]
             junctions2d_calib = junctions2d_calib[jassign[1]][is_correct]
             # junctions2d = junctions2d_gt[jassign[0]][is_correct]
-
             junctions3d_global = self.ffn(self.latents)
             junctions2d_global = self.project2D(intrinsics[0,:3,:3], R, T, junctions3d_global)
             junctions2d_global_calib = self.project2D(torch.eye(3).cuda(), R, T, junctions3d_global)
@@ -436,22 +451,13 @@ class VolSDFNetwork(nn.Module):
             output['j2d_local_calib'] = junctions2d_calib
             output['j2d_global_calib'] = junctions2d_global_calib
 
-        if not self.training:
-            line_ray_d, line_ray_o = rend_util.get_camera_params(input['uv_proj'], pose, intrinsics)
-            line_ray_d = line_ray_d.reshape(-1,3)
-            line_ray_o = line_ray_o.repeat(line_ray_d.shape[0],1)
-            denominator = torch.sum(line_ray_d*points_gradients,dim=-1)
-            denom_eps = torch.where(denominator>=0, 
-                torch.ones_like(denominator)*1e-6,
-                -torch.ones_like(denominator)*1e-6
-                )
-            t = torch.sum((points3d-line_ray_o)*points_gradients,dim=-1)/(denominator+denom_eps)
-            t = t.detach()
-            l3d = line_ray_o + line_ray_d*t.unsqueeze(-1)
-            points3d_sdf, points_features, points_gradients = self.implicit_network.get_outputs(l3d)
+        # if not self.training:
+            
+            # points3d_sdf, points_features, points_gradients = self.implicit_network.get_outputs(l3d)
             # lines3d  = self.attraction_network.forward(l3d.detach(), points_gradients.detach(), points_features.detach())
             # lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
-            output['l3d'] = l3d
+            # import pdb; pdb.set_trace()
+        output['l3d'] = l3d
 
         output['points3d'] = points3d
         # output['points3d_att'] = points3d_att

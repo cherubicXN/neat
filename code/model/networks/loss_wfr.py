@@ -46,6 +46,8 @@ class VolSDFLoss(nn.Module):
 
     def forward(self, model_outputs, ground_truth):
         self.steps +=1
+        if self.steps >= 7047:
+            import pdb; pdb.set_trace()
         lines2d_gt, lines_weight =ground_truth['lines2d'][0].cuda().split(4,dim=-1)
         if 'labels' in ground_truth:
             lines_weight = lines_weight*ground_truth['labels'][0,:,None].cuda()
@@ -54,7 +56,6 @@ class VolSDFLoss(nn.Module):
         l2d_loss_uncalib, threshold = self.get_line_loss(lines2d, lines2d_gt, lines_weight)
         # import pdb; pdb.set_trace()
         count = (threshold<100).sum()
-
         lines2d_gt_calib = lines2d_gt.reshape(-1,2)
         lines2d_gt_calib_h = torch.cat([lines2d_gt_calib, torch.ones_like(lines2d_gt_calib[:,:1])],dim=-1)
         lines2d_gt_calib_h =  (model_outputs['K'].inverse()@lines2d_gt_calib_h.t()).t()

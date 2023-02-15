@@ -231,6 +231,9 @@ def initial_recon(model, eval_dataloader, chunksize, *,
     junctions3d_refined = torch.stack([v.mean(dim=0) for v in gjc_dict.values() if v.shape[0]>1])
 
     lines3d_all = torch.cat(lines3d_all,dim=0)
+    scores_all = torch.cat(scores_all,dim=0)
+    lines3d_all = lines3d_all[scores_all<0.01]
+
 
     graph_initial, lines3d_wfi = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_initial.cuda(), rel_matching_distance_threshold=0.01)
     graph_refined, lines3d_wfr = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_refined.cuda(), rel_matching_distance_threshold=0.01)
@@ -333,7 +336,6 @@ def wireframe_recon(**kwargs):
 
     for key in ['wfi', 'wfr', 'wfi_checked', 'wfr_checked']:
         np.savez(basename.format(key), lines3d=initial_recon_results['lines3d_{}'.format(key)].cpu().numpy())
-        print('saved {}'.format(key))
         print('python evaluation/show.py --data {}'.format(basename.format(key)))
 
     torch.save(initial_recon_results, os.path.join(wireframe_dir,'{}-neat.pth'.format(kwargs['checkpoint'])))

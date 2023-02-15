@@ -12,7 +12,7 @@
 <tr>
 <td>24</td>
 <td>2000-wfi_checked</td>
-<td>0.4736</td>
+<td><b>0.4736</b></td>
 <td>6.6234</td>
 <td rowspan="4">
 <img src="exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23/wireframes/2000-wfi_checked_record.gif" width="512" />

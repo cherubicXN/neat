@@ -4,26 +4,28 @@
 
 ## Experiments
 
-### 1. DTU-24
   <table>
     <tr>
-        <th colspan="5">exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23</th>
+        <th>DTU-24</th><th colspan="4">exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23</th>
     </tr>
     <tr>
-      <th>Scan ID</th>
+        <th colspan="5">
+          <img src="exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23/wireframes/2000-wfi_checked_record.gif" width="512" />
+        </th>
+    </tr>
+    <tr>
       <th>Name of experiments</th>
       <th>ACC</th>
       <th>COMP</th>
-      <th>GIF</th>
+      <th>ACC (Junctions)</th>
+      <th>COMP (Junctions)</th>
     </tr>
     <tr>
-    <td rowspan="4">24</td>
     <td>2000-wfi_checked</td>
     <td><b>0.4736</b></td>
     <td>6.6234</td>
-    <td rowspan="4">
-    <img src="exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23/wireframes/2000-wfi_checked_record.gif" width="512" />
-    </td>
+    <td rowspan="2"> 0.6892 </td>
+    <td rowspan="2"> 8.4224 </td>
     </tr>
     <tr>
     <td>2000-wfi</td>
@@ -34,6 +36,8 @@
     <td>2000-wfr</td>
     <td>0.7820</td>
     <td>5.8845</td>
+    <td rowspan="2"> 0.8668 </td>
+    <td rowspan="2"> 8.8199 </td>
     </tr>
     <tr>
     <td>2000-wfr_checked</td>

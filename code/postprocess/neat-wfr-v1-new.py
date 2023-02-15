@@ -103,6 +103,178 @@ def get_overlap_orth_line_dist(line_seg1, line_seg2, min_overlap=0.5):
     line_dists[low_overlaps] = np.amax(line_dists)
     return line_dists
 
+def get_wireframe_from_lines_and_junctions(lines, junctions, *, 
+                    rel_matching_distance_threshold = 0.01,
+                    ):
+    device = lines.device
+    ep1, ep2 = lines[:, 0], lines[:, 1]
+    cost1 = torch.cdist(ep1, junctions)
+    cost2 = torch.cdist(ep2, junctions)
+    mcost1, midx1 = cost1.min(dim=1)
+    mcost2, midx2 = cost2.min(dim=1)
+    is_matched = torch.max(mcost1,mcost2)<torch.norm(ep1-ep2,dim=-1)*rel_matching_distance_threshold
+
+    graph = torch.zeros((junctions.shape[0], junctions.shape[0]), device=device)
+    pair = torch.stack([torch.min(midx1,midx2),torch.max(midx1,midx2)],dim=1)
+    graph[pair[:,0],pair[:,1]] = 1
+    graph[pair[:,1],pair[:,0]] = 1
+
+    lines3d_wf = junctions[graph.triu().nonzero()]
+    return graph, lines3d_wf
+
+
+def initial_recon(model, eval_dataloader, chunksize, *, 
+                  line_dis_threshold = 10,
+                  line_score_threshold = 0.01,
+                  junc_match_threshold = 0.05,
+                  **kwargs,
+                ):
+
+    DEBUG = kwargs.get('DEBUG', False)
+    model.eval()
+
+    lines3d_all = []
+    points3d_all = []
+    scores_all = []
+
+    global_junctions = model.ffn(model.latents).detach()
+    gjc_dict = defaultdict(list)
+
+    for indices, model_input, ground_truth in tqdm(eval_dataloader):
+        if DEBUG and indices.item()>5:
+            break
+        mask = model_input['mask']
+        model_input["intrinsics"] = model_input["intrinsics"].cuda()
+        model_input["uv"] = model_input["uv"].cuda()
+        model_input['uv'] = model_input['uv'][:,mask[0]]
+        model_input["uv_proj"] = model_input['uv_proj'][:,mask[0]]
+        model_input['lines'] = model_input['lines'].cuda()
+        model_input['pose'] = model_input['pose'].cuda()
+
+        lines = model_input['lines'][0].cuda()
+        labels = model_input['labels'][0]
+        split = utils.split_input(model_input, mask.sum().item(), n_pixels=chunksize,keys=['uv','uv_proj','lines'])
+        split_label = torch.split(labels[mask[0]],chunksize)
+        split_lines = torch.split(lines[mask[0]],chunksize)
+        lines3d = []
+        lines2d = []
+        points3d = []
+
+        for s, lb, lines_gt in zip(split,split_label,split_lines):
+            torch.cuda.empty_cache()
+            out = model(s)
+            lines3d_ = out['lines3d'].detach()
+            lines2d_ = out['lines2d'].detach().reshape(-1,4)
+            
+            lines3d.append(lines3d_)
+            lines2d.append(lines2d_)
+            
+            points3d_ = out['l3d'].detach()
+            points3d.append(points3d_)
+        
+        lines3d = torch.cat(lines3d)
+        lines3d = torch.cat((lines3d,lines3d[:,[1,0]]),dim=0)
+        lines2d = torch.cat(lines2d,dim=0)
+        lines2d = torch.cat((lines2d,lines2d[:,[2,3,0,1]]),dim=0)
+        if len(points3d)>0:
+            points3d = torch.cat(points3d,dim=0)
+            points3d = torch.cat([points3d,points3d])
+
+        gt_lines = model_input['wireframe'][0].line_segments(0.01).cuda()[:,:-1]
+
+        dis = torch.sum((lines2d[:,None]-gt_lines[None])**2,dim=-1)
+
+        mindis, minidx = dis.min(dim=1)
+
+        labels = minidx[mindis<line_dis_threshold].unique()
+        lines3d_valid = lines3d[mindis<line_dis_threshold]
+        points3d_valid = points3d[mindis<line_dis_threshold]
+        assignment = minidx[mindis<line_dis_threshold]
+
+        lines3d = []
+        points3d = []
+        scores = []
+        for label in labels:
+            idx = (assignment==label).nonzero().flatten()
+            if idx.numel()==0:
+                continue
+            val = lines3d_valid[idx].mean(dim=0)
+            lines3d.append(val)
+            support_pts = points3d_valid[idx]
+            support_dis = torch.norm(torch.cross(support_pts-val[:1],support_pts-val[1:]),dim=-1)/torch.norm(val[1]-val[0]).clamp_min(1e-6)
+            points3d.append(
+                support_pts[torch.randperm(support_pts.shape[0])[0]]
+                )
+            scores.append(support_dis.mean())
+        if len(lines3d)>0:
+            lines3d = torch.stack(lines3d,dim=0)
+            points3d = torch.stack(points3d,dim=0)
+            scores = torch.tensor(scores)
+            endpoints = lines3d.reshape(-1,3)
+            cdist = torch.cdist(global_junctions,endpoints)
+            assign = linear_sum_assignment(cdist.cpu().numpy())
+            for ai, aj in zip(*assign):
+                if cdist[ai,aj]<junc_match_threshold:
+                    gjc_dict[ai].append(endpoints[aj])
+            
+        # weight = torch.where(dis<100,torch.exp(-dis),torch.zeros_like(-dis))
+        # weight = torch.nn.functional.normalize(weight,p=1,dim=0)
+            points3d_all.append(points3d.cpu())
+            lines3d_all.append(lines3d.cpu())
+            scores_all.append(scores.cpu())
+            print(len(gjc_dict.keys()))
+
+    for key in gjc_dict.keys():
+        gjc_dict[key] = torch.stack(gjc_dict[key],dim=0)
+
+    junctions3d_initial = torch.stack([global_junctions[k] for k,v in gjc_dict.items() if v.shape[0]>1])
+    junctions3d_refined = torch.stack([v.mean(dim=0) for v in gjc_dict.values() if v.shape[0]>1])
+
+    lines3d_all = torch.cat(lines3d_all,dim=0)
+
+    graph_initial, lines3d_wfi = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_initial.cuda(), rel_matching_distance_threshold=0.01)
+    graph_refined, lines3d_wfr = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_refined.cuda(), rel_matching_distance_threshold=0.01)
+
+    result_dict = {
+        'junctions3d_initial': junctions3d_initial,
+        'junctions3d_refined': junctions3d_refined,
+        'lines3d_all': lines3d_all,
+        'graph_initial': graph_initial,
+        'graph_refined': graph_refined,
+        'lines3d_wfi': lines3d_wfi,
+        'lines3d_wfr': lines3d_wfr,
+    }
+    return result_dict
+
+def visibility_checking(lines3d_all, eval_dataloader, model, *, 
+                        mindis_th = 25, min_visible_views=1, device='cuda'):
+
+    visibility = torch.zeros((lines3d_all.shape[0],),device=device)
+    lines3d_visibility = torch.zeros((lines3d_all.shape[0],len(eval_dataloader)),device=device, dtype=torch.bool)
+    for indices, model_input, ground_truth in tqdm(eval_dataloader):    
+        lines2d_gt = model_input['wireframe'][0].line_segments(0.05)
+        mask = model_input['mask']
+        model_input["intrinsics"] = model_input["intrinsics"].to(device=device)#.cuda()
+        model_input['pose'] = model_input['pose'].to(device=device)
+
+        K = model_input["intrinsics"][0,:3,:3]
+        proj_mat = model_input['pose'][0].inverse()[:3]
+        R = proj_mat[:,:3]
+        T = proj_mat[:,3:]
+
+        lines2d_all = model.project2D(K,R,T,lines3d_all).reshape(-1,4)
+        lines2d_gt = lines2d_gt.to(device=device)
+
+        dis1 = torch.sum((lines2d_all[:,None]-lines2d_gt[None,:,[0,1,2,3]])**2,dim=-1)
+        dis2 = torch.sum((lines2d_all[:,None]-lines2d_gt[None,:,[2,3,0,1]])**2,dim=-1)
+        dis = torch.min(dis1,dis2)
+        
+        mindis = dis.min(dim=1)[0]
+        visibility[mindis<mindis_th] += 1
+        lines3d_visibility[mindis<mindis_th,indices[0]] = True
+    
+    lines3d_visible = lines3d_all[visibility>=min_visible_views]
+    return lines3d_visible
 
 def wireframe_recon(**kwargs):
     torch.set_default_dtype(torch.float32)
@@ -151,158 +323,23 @@ def wireframe_recon(**kwargs):
 
     line_path = os.path.join(wireframe_dir,'{}-wfr.npz'.format(kwargs['checkpoint']))
 
-    chunksize = kwargs['chunksize']
+    initial_recon_results = initial_recon(model, eval_dataloader, kwargs['chunksize'])
+    lines3d_wfi_checked = visibility_checking(initial_recon_results['lines3d_wfi'], eval_dataloader, model, mindis_th = 25, min_visible_views=1)
+    lines3d_wfr_checked = visibility_checking(initial_recon_results['lines3d_wfr'], eval_dataloader, model, mindis_th = 25, min_visible_views=1)
+    initial_recon_results['lines3d_wfi_checked'] = lines3d_wfi_checked
+    initial_recon_results['lines3d_wfr_checked'] = lines3d_wfr_checked
 
-    # sdf_threshold = kwargs['sdf_threshold']
+    basename = os.path.join(wireframe_dir,'{}-{}.npz'.format(kwargs['checkpoint'],'{}'))
 
-    lines3d_all = []
+    for key in ['wfi', 'wfr', 'wfi_checked', 'wfr_checked']:
+        np.savez(basename.format(key), lines3d=initial_recon_results['lines3d_{}'.format(key)].cpu().numpy())
+        print('saved {}'.format(key))
+        print('python evaluation/show.py --data {}'.format(basename.format(key)))
 
-    maskdirs = os.path.join(root,'masks')
-    utils.mkdir_ifnotexists(maskdirs)
-    
-    points3d_all = []
-    scores_all = []
-    
-    global_junctions = model.ffn(model.latents).detach()
-    gjc_dict = defaultdict(list)
-    trimesh.points.PointCloud(global_junctions.cpu().numpy()).show()
-    for indices, model_input, ground_truth in tqdm(eval_dataloader):    
-        mask = model_input['mask']
-        model_input["intrinsics"] = model_input["intrinsics"].cuda()
-        model_input["uv"] = model_input["uv"].cuda()
-        model_input['uv'] = model_input['uv'][:,mask[0]]
-        model_input["uv_proj"] = model_input['uv_proj'][:,mask[0]]
-        model_input['lines'] = model_input['lines'].cuda()
-        # randidx = torch.randperm(model_input['uv'].shape[1])
-        # model_input['uv'] = model_input['uv'][:,randidx]
-        model_input['pose'] = model_input['pose'].cuda()
-        import cv2
-        mask_im = mask.numpy().reshape(*eval_dataset.img_res)
-        mask_im = np.array(mask_im,dtype=np.uint8)*255
-        mask_path = os.path.join(maskdirs,'{:04d}.png'.format(indices.item()))
-        cv2.imwrite(mask_path, mask_im)
-        lines = model_input['lines'][0].cuda()
-        labels = model_input['labels'][0]
-        split = utils.split_input(model_input, mask.sum().item(), n_pixels=chunksize,keys=['uv','uv_proj','lines'])
-        # import pdb; pdb.set_trace()
-        split_label = torch.split(labels[mask[0]],chunksize)
-        split_lines = torch.split(lines[mask[0]],chunksize)
-        lines3d = []
-        lines2d = []
-        points3d = []
-        # emb_by_dict = defaultdict(list)
-        for s, lb, lines_gt in zip(split,split_label,split_lines):
-            torch.cuda.empty_cache()
-            out = model(s)
-            lines3d_ = out['lines3d'].detach()
-            lines2d_ = out['lines2d'].detach().reshape(-1,4)
-            
-            lines3d.append(lines3d_)
-            lines2d.append(lines2d_)
-            
-            points3d_ = out['l3d'].detach()
-            points3d.append(points3d_)
+    torch.save(initial_recon_results, os.path.join(wireframe_dir,'{}-neat.pth'.format(kwargs['checkpoint'])))
+    print('done')
 
 
-        lines3d = torch.cat(lines3d)
-        lines3d = torch.cat((lines3d,lines3d[:,[1,0]]),dim=0)
-        lines2d = torch.cat(lines2d,dim=0)
-        lines2d = torch.cat((lines2d,lines2d[:,[2,3,0,1]]),dim=0)
-        if len(points3d)>0:
-            points3d = torch.cat(points3d,dim=0)
-            points3d = torch.cat([points3d,points3d])
-
-
-
-        gt_lines = model_input['wireframe'][0].line_segments(0.01).cuda()[:,:-1]
-
-        dis = torch.sum((lines2d[:,None]-gt_lines[None])**2,dim=-1)
-
-        mindis, minidx = dis.min(dim=1)
-
-        labels = minidx[mindis<10].unique()
-        lines3d_valid = lines3d[mindis<10]
-        points3d_valid = points3d[mindis<10]
-        assignment = minidx[mindis<10]
-
-
-        lines3d = []
-        points3d = []
-        scores = []
-        for label in labels:
-            idx = (assignment==label).nonzero().flatten()
-            if idx.numel()==0:
-                continue
-            val = lines3d_valid[idx].mean(dim=0)
-            lines3d.append(val)
-            support_pts = points3d_valid[idx]
-            support_dis = torch.norm(torch.cross(support_pts-val[:1],support_pts-val[1:]),dim=-1)/torch.norm(val[1]-val[0]).clamp_min(1e-6)
-            points3d.append(
-                support_pts[torch.randperm(support_pts.shape[0])[0]]
-                )
-            scores.append(support_dis.mean())
-        if len(lines3d)>0:
-            lines3d = torch.stack(lines3d,dim=0)
-            points3d = torch.stack(points3d,dim=0)
-            scores = torch.tensor(scores)
-            endpoints = lines3d.reshape(-1,3)
-            cdist = torch.cdist(global_junctions,endpoints)
-            assign = linear_sum_assignment(cdist.cpu().numpy())
-            for ai, aj in zip(*assign):
-                if cdist[ai,aj]<0.05:
-                    gjc_dict[ai].append(endpoints[aj])
-            
-        # weight = torch.where(dis<100,torch.exp(-dis),torch.zeros_like(-dis))
-        # weight = torch.nn.functional.normalize(weight,p=1,dim=0)
-            points3d_all.append(points3d.cpu())
-            lines3d_all.append(lines3d.cpu())
-            scores_all.append(scores.cpu())
-            print(len(gjc_dict.keys()))
-
-    for key in gjc_dict.keys():
-        gjc_dict[key] = torch.stack(gjc_dict[key],dim=0)
-
-    queried_points3d = torch.cat(points3d_all,dim=0)
-
-    junctions3d_refined = torch.stack([v.mean(dim=0) for v in gjc_dict.values() if v.shape[0]>1])
-    lines3d_all = torch.cat(lines3d_all,dim=0).cuda()
-    # ep1, ep2 = lines3d_all[:,0].cuda(), lines3d_all[:,1].cuda()
-    # ep1, ep2 =torch.split(lines3d_all[scores_all<0.01],1,dim=1)
-    scores_all = torch.cat(scores_all)
-    ep1 = lines3d_all[scores_all<0.01,0]
-    ep2 = lines3d_all[scores_all<0.01,1]
-
-    cost1 = torch.cdist(ep1.cuda(),junctions3d_refined)
-    mcost1, midx1 = cost1.min(dim=1)
-    cost2 = torch.cdist(ep2.cuda(),junctions3d_refined)
-    mcost2, midx2 = cost2.min(dim=1)
-    score = torch.min(mcost1,mcost2)<torch.norm(ep1-ep2,dim=-1)*0.01
-
-    graph = torch.zeros((junctions3d_refined.shape[0],junctions3d_refined.shape[0]))
-    pair = torch.stack([torch.min(midx1,midx2),torch.max(midx1,midx2)],dim=1)
-    lines3d_wf = junctions3d_refined[pair.unique(dim=0)]
-
-    result_dict = {
-        'lines3d_init':lines3d_all.cpu(),
-        'scores':scores_all.cpu(),
-        'lines3d_wf': lines3d_wf.cpu(),
-        'queried_points3d':queried_points3d.cpu(),
-        'junctions3d_init': global_junctions.cpu(),
-        'junctions3d':junctions3d_refined.cpu(),
-        'graph': graph.cpu(),
-        'pair': pair.cpu(),
-    }
-
-    np.savez(line_path,lines3d=lines3d_wf.cpu().numpy())#scores=scores_all,cameras=cameras),#scores=scores_all,points3d_all=points3d_all)
-    print('save the reconstructed wireframes to {}'.format(line_path))
-    print('python evaluation/show.py --data {}'.format(line_path))
-
-    # num_lines = sum([l.shape[0] for l in lines3d_all])
-    # print('Number of Total Lines: {num_lines}'.format(num_lines=num_lines))
-    
-
-    # lines3d_all = np.concatenate(lines3d_all,axis=0)
-    # lines3d_all = torch.stac
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

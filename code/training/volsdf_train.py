@@ -51,7 +51,7 @@ class VolSDFTrainRunner():
         scan_id = kwargs['scan_id'] if kwargs['scan_id'] != -1 else self.conf.get_int('dataset.scan_id', default=-1)
         if scan_id != -1:
             self.expname = self.expname + '/{0}'.format(scan_id)
-        self.conf.put('dataset.scan_id', scan_id)
+            self.conf.put('dataset.scan_id', scan_id)
 
         self.repo =  git.Repo(search_parent_directories=True)
         if kwargs['is_continue'] and kwargs['timestamp'] == 'latest':
@@ -202,7 +202,6 @@ class VolSDFTrainRunner():
         logger.addHandler(fh)
         self.logger = logger
         self.log_freq = 1 if kwargs['verbose'] else len(self.train_dataloader)
-        import pdb; pdb.set_trace()
         if kwargs['wandb'] and WANDB_AVAILABLE:
             wandb.init(project="NEAT", 
                 name='{}/{}/{}'.format(

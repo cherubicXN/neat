@@ -174,11 +174,11 @@ class VolSDFTrainRunner():
 
             data = torch.load(
                 os.path.join(old_checkpnts_dir, 'OptimizerParameters', str(kwargs['checkpoint']) + ".pth"))
-            # self.optimizer.load_state_dict(data["optimizer_state_dict"],strict=False)
+            self.optimizer.load_state_dict(data["optimizer_state_dict"])#,strict=False)
 
             data = torch.load(
                 os.path.join(old_checkpnts_dir, self.scheduler_params_subdir, str(kwargs['checkpoint']) + ".pth"))
-            # self.scheduler.load_state_dict(data["scheduler_state_dict"],strict=False)
+            self.scheduler.load_state_dict(data["scheduler_state_dict"])#,strict=False)
 
         self.num_pixels = self.conf.get_int('train.num_pixels')
         self.total_pixels = self.train_dataset.total_pixels

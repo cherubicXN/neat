@@ -140,9 +140,12 @@ def initial_recon(model, eval_dataloader, chunksize, *,
     global_junctions = model.ffn(model.latents).detach()
     if kwargs.get('sdf_junction_refine',True):
         glj_sdf, glj_feats, glj_grad = model.implicit_network.get_outputs(global_junctions)
+        is_valid = glj_sdf.abs()<0.05
+        # glj_sdf = torch.where(is_valid, glj_sdf, torch.zeros_like(glj_sdf))
         global_junctions = (global_junctions - glj_sdf*glj_grad).detach()
+        
     gjc_dict = defaultdict(list)
-
+    trimesh.points.PointCloud(global_junctions[is_valid[:,0]].cpu().numpy()).show()
     for indices, model_input, ground_truth in tqdm(eval_dataloader):
         if DEBUG and indices.item()>5:
             break

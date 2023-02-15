@@ -475,7 +475,7 @@ class VolSDFNetwork(nn.Module):
             eikonal_points = torch.cat([eikonal_points, eik_near_points], 0)
 
             if self.junction_eikonal:
-                eikonal_points = torch.cat([eikonal_points, junctions3d_global], 0)
+                eikonal_points = torch.cat([eikonal_points, junctions3d_global.detach()], 0)
             grad_theta = self.implicit_network.gradient(eikonal_points)
             output['grad_theta'] = grad_theta
 

@@ -137,6 +137,8 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
     WireframeVisualizer.rot_theta = ry
     WireframeVisualizer.rot_phi = rz
     WireframeVisualizer.t = t
+    WireframeVisualizer.done = False
+
 
     min_w = 10000
     min_h = 10000
@@ -206,8 +208,9 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
         glb.rot_theta+=5
         glb.rot_theta = glb.rot_theta%360
 
-        if glb.rot_theta in project_lines:
+        if glb.rot_theta in project_lines and not glb.done:
             print('finished')
+            glb.done = True
             return False
         
         param = ctr.convert_to_pinhole_camera_parameters()
@@ -390,6 +393,8 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
     out.release()
 
     print('Done! Saved to {}'.format(render_dir+'.mp4'))
+    import imageio
+    imageio.mimsave(render_dir+'.gif', [cv2.cvtColor(img,cv2.COLOR_BGR2RGB) for img in rendered_images], fps=30)
     # print save path
     # print('Saving to {}'.format(render_dir))
         # plt.savefig('{}/{:04d}.png')

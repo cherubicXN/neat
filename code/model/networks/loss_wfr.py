@@ -14,12 +14,14 @@ def plt_lines(lines,*args, **kwargs):
 
 
 class VolSDFLoss(nn.Module):
-    def __init__(self, rgb_loss, eikonal_weight, line_weight):
+    def __init__(self, rgb_loss, eikonal_weight, line_weight, junction_3d_weight = 0.1, junction_2d_weight = 0.01):
         super().__init__()
         self.eikonal_weight = eikonal_weight
         self.line_weight = line_weight
         self.rgb_loss = utils.get_class(rgb_loss)(reduction='mean')
         self.steps = 0
+        self.junction_3d_weight = junction_3d_weight
+        self.junction_2d_weight = junction_2d_weight
 
     def get_rgb_loss(self,rgb_values, rgb_gt):
         rgb_gt = rgb_gt.reshape(-1, 3)
@@ -79,22 +81,28 @@ class VolSDFLoss(nn.Module):
         with torch.no_grad():
             j3d_cost = torch.cdist(j3d_local,j3d_global, p=1)
             j2d_cost = torch.cdist(j2d_local_calib,j2d_global_calib, p=1)
-            jcost_all = j3d_cost + j2d_cost*0.1
+            jcost_all = j3d_cost + j2d_cost*0.01
         # assign = linear_sum_assignment(j3d_cost.detach().cpu().numpy())
             jcost_all[torch.isnan(jcost_all)] = 100000
         
         assign = linear_sum_assignment(jcost_all.detach().cpu().numpy())
         assign_cost = jcost_all[assign[0],assign[1]]
-        
-        loss_j3d = torch.sum((j3d_local[assign[0]]-j3d_global[assign[1]]).abs(),dim=-1)
-        loss_j3d = torch.mean(loss_j3d*(assign_cost<100000))
-        loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]]).abs(),dim=-1)
-        loss_j2d = torch.mean(loss_j2d*(assign_cost<100000))
-        # loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]])**2,dim=-1).mean()
-        
         with torch.no_grad():
             # loss_j2d_u = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]])**2,dim=-1).mean()
-            loss_j2d_u = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]]).abs(),dim=-1).mean()
+            loss_j2d_u_arr = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]]).abs(),dim=-1)
+            # loss_j2d_u = loss_j2d_u_arr.mean()
+
+        assign_mask = loss_j2d_u_arr < 10
+        loss_j2d_u = torch.sum(loss_j2d_u_arr*assign_mask)/torch.sum(assign_mask).clamp_min(1)
+        loss_j3d = torch.sum((j3d_local[assign[0]]-j3d_global[assign[1]]).abs(),dim=-1)
+        # loss_j3d = torch.mean(loss_j3d*assign_mask)
+        loss_j3d = torch.mean(loss_j3d)
+        loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]]).abs(),dim=-1)
+        loss_j2d = torch.mean(loss_j2d)
+        # loss_j2d = torch.mean(loss_j2d*assign_mask)
+        # loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]])**2,dim=-1).mean()
+        
+        
 
         # if self.steps%(49*20)==0:
             # print('loss',rgb_loss.item(),eikonal_loss.item(),lines2d_loss.item(),loss_j3d.item())
@@ -103,8 +111,8 @@ class VolSDFLoss(nn.Module):
         loss = rgb_loss + \
                self.eikonal_weight * eikonal_loss + \
                self.line_weight*lines2d_loss + \
-                loss_j3d*0.1 + \
-                loss_j2d*0.01
+               self.junction_3d_weight*loss_j3d + \
+               self.junction_2d_weight*loss_j2d
                 # loss_j2d*0.0001
                 # loss_j2d*0.01
             #    loss_cls*0.0
@@ -120,7 +128,8 @@ class VolSDFLoss(nn.Module):
             'j3d_loss': loss_j3d,
             'j2d_loss': loss_j2d,
             'j2d_stat': loss_j2d_u,
-            'count': count
+            'count': count,
+            'jcount': assign_mask.sum(),
         }
         if 'median' in model_outputs:
             output['median'] = model_outputs['median']

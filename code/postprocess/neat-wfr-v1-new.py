@@ -138,7 +138,7 @@ def initial_recon(model, eval_dataloader, chunksize, *,
     scores_all = []
 
     global_junctions = model.ffn(model.latents).detach()
-    if kwargs.get('sdf_junction_refine',False):
+    if kwargs.get('sdf_junction_refine',True):
         glj_sdf, glj_feats, glj_grad = model.implicit_network.get_outputs(global_junctions)
         global_junctions = (global_junctions - glj_sdf*glj_grad).detach()
     gjc_dict = defaultdict(list)

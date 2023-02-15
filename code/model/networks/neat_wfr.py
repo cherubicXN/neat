@@ -9,6 +9,8 @@ from model.ray_sampler import ErrorBoundSampler
 import open3d as o3d
 import trimesh
 from scipy.optimize import linear_sum_assignment
+
+from pyhocon import ConfigTree
 class ImplicitNetwork(nn.Module):
     def __init__(
             self,
@@ -274,7 +276,7 @@ class VolSDFNetwork(nn.Module):
         self.density = LaplaceDensity(**conf.get_config('density'))
         self.ray_sampler = ErrorBoundSampler(self.scene_bounding_sphere, **conf.get_config('ray_sampler'))
 
-        conf_junctions = conf.get_config('global_junctions')
+        conf_junctions = conf.get_config('global_junctions', default=ConfigTree())
 
         ffn = []
         num_layers = conf_junctions.get_int('num_layers',default=2)

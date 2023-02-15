@@ -101,7 +101,7 @@ class VolSDFTrainRunner():
             f.write(HOCONConverter.convert(self.conf))
         
         self.repo.index.add(os.path.abspath(os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
-        self.repo.index.commit('new experiment {0}'.format(self.expdir))
+        self.repo.index.commit('new experiment {0}'.format(self.expdir),committer= git.Actor(name='expbot',email='expbot'))
         # os.system("""cp -r {0} "{1}" """.format(kwargs['conf'], os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
 
         if (not self.GPU_INDEX == 'ignore'):
@@ -218,7 +218,7 @@ class VolSDFTrainRunner():
     def commit_log(self, msg='update log'):
         log_path = os.path.join(self.expdir,self.timestamp, 'train.log')
         self.repo.index.add(os.path.abspath(log_path))
-        self.repo.index.commit(msg)
+        self.repo.index.commit(msg,committer= git.Actor(name='expbot',email='expbot'))
 
     def save_checkpoints(self, epoch):
         torch.save(

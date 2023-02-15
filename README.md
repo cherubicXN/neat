@@ -6,12 +6,12 @@
 
   <table>
     <tr>
-        <th>DTU-24</th><th colspan="4">exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23</th>
-    </tr>
-    <tr>
         <th colspan="5">
           <img src="exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23/wireframes/2000-wfi_checked_record.gif" width="512" />
         </th>
+    </tr>
+    <tr>
+        <th>DTU-24</th><th colspan="4">exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23</th>
     </tr>
     <tr>
       <th>Name of experiments</th>

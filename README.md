@@ -1,6 +1,6 @@
 ## NEAT: Neural Attraction Fields for 3D Wireframe Reconstruction
 
-### Authors: Nan Xue, Bin Tan
+### Authors: Nan Xue, Bin Tan, Gui-Song Xia, Tianfu Wu
 
 ## Experiments
 
@@ -24,8 +24,8 @@
     <td>2000-wfi_checked</td>
     <td><b>0.4736</b></td>
     <td>6.6234</td>
-    <td rowspan="2"> 0.6892 </td>
-    <td rowspan="2"> 8.4224 </td>
+    <td rowspan="2"> <b>0.6892</b> </td>
+    <td rowspan="2"> <b>8.4224</b> </td>
     </tr>
     <tr>
     <td>2000-wfi</td>
@@ -64,4 +64,4 @@
   - [ ] Checking if the online clustering is necessary
   - [ ] Using junctions for SDF and NEAT field learning
   - [ ] Other scenes (e.g., LLFF, Apple's dataset)
-  - [ ] Query 3D lines
+  - [x] Query 3D lines

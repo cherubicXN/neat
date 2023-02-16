@@ -319,6 +319,7 @@ class VolSDFNetwork(nn.Module):
         self.dbscan_enabled = conf.get_bool('dbscan_enabled', default=True)
         self.use_median = conf.get_bool('use_median', default=False)
         self.junction_eikonal = conf.get_bool('junction_eikonal', default=False)
+        self.use_l3d = conf.get_bool('use_l3d', default=False)
 
     def project2D(self, K,R,T, points3d):
         shape = points3d.shape 
@@ -401,7 +402,7 @@ class VolSDFNetwork(nn.Module):
 
         lines3d  = self.attraction_network.forward(points3d.detach(), points_gradients.detach(), points_features.detach())
         # lines3d = torch.stack((e1,e2),dim=1)
-        lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d.detach())
+        lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
         lines2d_calib = self.project2D(torch.eye(3).cuda(), R, T, lines3d)
         # import pdb; pdb.set_trace()
         line_ray_d, line_ray_o = rend_util.get_camera_params(input['uv_proj'], pose, intrinsics)
@@ -421,22 +422,29 @@ class VolSDFNetwork(nn.Module):
             
             if self.dbscan_enabled:
                 junctions3d = self.cluster_dbscan(lines3d.detach().cpu().numpy().reshape(-1,3),eps=0.01,min_samples=2)
-            else:
-                l3d_score_median = min(l3d_score.median(),0.01)
+            elif self.use_l3d:
+                l3d_score_median = max(l3d_score.median(),0.01)
                 junctions3d = lines3d[l3d_score<l3d_score_median].detach().reshape(-1,3)
+                junctions3d_ = l3d[l3d_score<l3d_score_median]
+                junctions3d = torch.cat((junctions3d,junctions3d_),dim=0)
+            else:
+                junctions3d = lines3d.detach().reshape(-1,3)
                 # junctions3d = lines3d.detach().reshape(-1,3)
             junctions2d = self.project2D(intrinsics[0,:3,:3], R, T, junctions3d)
             junctions2d_calib = self.project2D(torch.eye(3).cuda(), R, T, junctions3d)
             junctions2d_gt = input['wireframe'][0].vertices.cuda()
             jcost = torch.sum((junctions2d[None]-junctions2d_gt[:,None])**2,dim=-1).sqrt()
             jassign = linear_sum_assignment(jcost.cpu())
-            
+
             if self.use_median:
                 median = jcost[jassign[0],jassign[1]].detach().median()
+                if torch.isnan(median):
+                    median = torch.tensor(10,dtype=torch.float32).cuda()
                 is_correct = jcost[jassign[0],jassign[1]]<median
                 output['median'] = median
             else:
                 is_correct = jcost[jassign[0],jassign[1]]<10
+            
             junctions3d = junctions3d[jassign[1]][is_correct]
             junctions2d = junctions2d[jassign[1]][is_correct]
             junctions2d_calib = junctions2d_calib[jassign[1]][is_correct]

@@ -104,7 +104,8 @@ class VolSDFLoss(nn.Module):
 
             median = torch.median(j2d_local_quality)
 
-            j2d_local_quality = j2d_local_quality < median
+            j2d_local_quality = torch.where(j2d_local_quality < median, torch.ones_like(j2d_local_quality), torch.zeros_like(j2d_local_quality))
+
             with torch.no_grad():
                 j3d_cost = torch.cdist(j3d_local,j3d_global, p=1)
                 j2d_cost = torch.cdist(j2d_local_calib,j2d_global_calib, p=1)

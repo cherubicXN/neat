@@ -11,7 +11,8 @@ from tqdm import tqdm
 import pandas as pd
 
 import utils.general as utils
-import utils.plots as plt
+# import utils.plots as plt
+import matplotlib.pyplot as plt
 from utils import rend_util
 from collections import defaultdict
 import trimesh
@@ -145,6 +146,8 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         global_junctions = (global_junctions - glj_sdf*glj_grad).detach()
         
     gjc_dict = defaultdict(list)
+    # eval_dataloader.dataset.wireframes
+    # import pdb; pdb.set_trace()
     trimesh.points.PointCloud(global_junctions[is_valid[:,0]].cpu().numpy()).show()
     for indices, model_input, ground_truth in tqdm(eval_dataloader):
         if DEBUG and indices.item()>5:
@@ -165,7 +168,6 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         lines3d = []
         lines2d = []
         points3d = []
-
         for s, lb, lines_gt in zip(split,split_label,split_lines):
             torch.cuda.empty_cache()
             out = model(s)
@@ -177,6 +179,13 @@ def initial_recon(model, eval_dataloader, chunksize, *,
             
             points3d_ = out['l3d'].detach()
             points3d.append(points3d_)
+
+            dis1 = torch.sum((lines2d_-lines_gt[:,:-1])**2,dim=-1)
+            dis2 = torch.sum((lines2d_-lines_gt[:,[2,3,0,1]])**2,dim=-1)
+            dis = torch.min(dis1,dis2)
+            # trimesh.load_path(lines3d_[dis<10].cpu()).show()
+            # print(dis.min().item())
+
         
         lines3d = torch.cat(lines3d)
         lines3d = torch.cat((lines3d,lines3d[:,[1,0]]),dim=0)
@@ -189,6 +198,7 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         gt_lines = model_input['wireframe'][0].line_segments(0.01).cuda()[:,:-1]
 
         dis = torch.sum((lines2d[:,None]-gt_lines[None])**2,dim=-1)
+        # import pdb; pdb.set_trace()
 
         mindis, minidx = dis.min(dim=1)
 
@@ -199,6 +209,7 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         lines3d = []
         points3d = []
         scores = []
+        # import pdb; pdb.set_trace()
         for label in labels:
             idx = (assignment==label).nonzero().flatten()
             if idx.numel()==0:

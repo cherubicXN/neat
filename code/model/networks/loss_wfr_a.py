@@ -94,13 +94,17 @@ class VolSDFLoss(nn.Module):
             j2d_global_calib = model_outputs['j2d_global_calib']
 
             j2d_observed = model_outputs['wireframe-gt'][0].vertices.cuda()
-            cost_ob2loc = torch.cdist(j2d_observed,j2d_local_calib, p=1)
+            cost_ob2loc = torch.cdist(j2d_observed,j2d_local, p=1)
             assign_ob2loc = linear_sum_assignment(cost_ob2loc.detach().cpu().numpy())
 
             j3d_local = j3d_local[assign_ob2loc[1]]
             j2d_local = j2d_local[assign_ob2loc[1]]
             j2d_local_calib = j2d_local_calib[assign_ob2loc[1]]
+            j2d_local_quality = cost_ob2loc[assign_ob2loc[0],assign_ob2loc[1]]
 
+            median = torch.median(j2d_local_quality)
+
+            j2d_local_quality = j2d_local_quality < median
             with torch.no_grad():
                 j3d_cost = torch.cdist(j3d_local,j3d_global, p=1)
                 j2d_cost = torch.cdist(j2d_local_calib,j2d_global_calib, p=1)
@@ -115,12 +119,12 @@ class VolSDFLoss(nn.Module):
                 # loss_j2d_u = loss_j2d_u_arr.mean()
 
             assign_mask = loss_j2d_u_arr < 10
-            loss_j2d_u = torch.sum(loss_j2d_u_arr*assign_mask)/torch.sum(assign_mask).clamp_min(1)
+            loss_j2d_u = torch.sum(loss_j2d_u_arr*j2d_local_quality)/torch.sum(j2d_local_quality).clamp_min(1)
             loss_j3d = torch.sum((j3d_local[assign[0]]-j3d_global[assign[1]]).abs(),dim=-1)
             # loss_j3d = torch.mean(loss_j3d*assign_mask)
-            loss_j3d = torch.mean(loss_j3d)
+            loss_j3d = torch.sum(loss_j3d*j2d_local_quality)/torch.sum(j2d_local_quality).clamp_min(1)
             loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]]).abs(),dim=-1)
-            loss_j2d = torch.mean(loss_j2d)
+            loss_j2d = torch.sum(loss_j2d*j2d_local_quality)/torch.sum(j2d_local_quality).clamp_min(1)
 
             loss += self.junction_3d_weight*loss_j3d + \
                 self.junction_2d_weight*loss_j2d 
@@ -149,8 +153,8 @@ class VolSDFLoss(nn.Module):
    
         
         
-        if 'median' in model_outputs:
-            output['median'] = model_outputs['median']
+        # if 'median' in model_outputs:
+        output['median'] = median
         # if self.steps>500:
       
         return output

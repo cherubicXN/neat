@@ -63,7 +63,6 @@ class BlenderDataset(torch.utils.data.Dataset):
             wireframe = WireframeGraph.load_json(hawp_path)
             self.wireframes.append(wireframe)
             assert wireframe.frame_height == img_res[0] and wireframe.frame_width ==img_res[1]
-            self.wireframes.append(wireframe)
             self.lines.append(wireframe.line_segments(self.score_threshold))
 
 

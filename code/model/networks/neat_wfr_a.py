@@ -418,6 +418,11 @@ class VolSDFNetwork(nn.Module):
         l3d = line_ray_o + line_ray_d*t.unsqueeze(-1)
         with torch.no_grad():
             l3d_score = torch.norm(torch.cross(l3d-lines3d[:,0],l3d-lines3d[:,1]),dim=-1)/torch.norm(lines3d[:,0]-lines3d[:,1],dim=-1)
+
+        # if not self.training:
+        #     sdf_, feature_vectors_, gradients_ = self.implicit_network.get_outputs(l3d)
+        #     lines3d = self.attraction_network.forward(l3d.detach(), gradients_.detach(), feature_vectors_.detach())
+        #     lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
         if self.training:
             
             if self.dbscan_enabled:

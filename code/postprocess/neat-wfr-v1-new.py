@@ -196,7 +196,6 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         lines3d_valid = lines3d[mindis<line_dis_threshold]
         points3d_valid = points3d[mindis<line_dis_threshold]
         assignment = minidx[mindis<line_dis_threshold]
-
         lines3d = []
         points3d = []
         scores = []
@@ -212,6 +211,7 @@ def initial_recon(model, eval_dataloader, chunksize, *,
                 support_pts[torch.randperm(support_pts.shape[0])[0]]
                 )
             scores.append(support_dis.mean())
+        
         if len(lines3d)>0:
             lines3d = torch.stack(lines3d,dim=0)
             points3d = torch.stack(points3d,dim=0)
@@ -230,16 +230,17 @@ def initial_recon(model, eval_dataloader, chunksize, *,
             scores_all.append(scores.cpu())
             print(len(gjc_dict.keys()))
 
+    # import pdb; pdb.set_trace()
+    
+    lines3d_all = torch.cat(lines3d_all,dim=0)
+    scores_all = torch.cat(scores_all,dim=0)
+    lines3d_all = lines3d_all[scores_all<0.01]
+
     for key in gjc_dict.keys():
         gjc_dict[key] = torch.stack(gjc_dict[key],dim=0)
 
     junctions3d_initial = torch.stack([global_junctions[k] for k,v in gjc_dict.items() if v.shape[0]>1])
     junctions3d_refined = torch.stack([v.mean(dim=0) for v in gjc_dict.values() if v.shape[0]>1])
-
-    lines3d_all = torch.cat(lines3d_all,dim=0)
-    scores_all = torch.cat(scores_all,dim=0)
-    lines3d_all = lines3d_all[scores_all<0.01]
-
 
     graph_initial, lines3d_wfi = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_initial.cuda(), rel_matching_distance_threshold=0.01)
     graph_refined, lines3d_wfr = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_refined.cuda(), rel_matching_distance_threshold=0.01)

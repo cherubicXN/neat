@@ -19,6 +19,34 @@ try:
 except:
     WANDB_AVAILABLE = False
     pass
+
+# backward hook with module name
+def get_backward_hook(module_name: str):
+    
+    class BackwardHook:
+        name: str
+            
+        def __init__(self, name):
+            self.name = name
+            
+        def __call__(self, module, grad_input, grad_output):
+            for i, g_in in enumerate(grad_input):
+                # if self.name == 'attraction_network.relu':
+                if not isinstance(g_in, torch.Tensor):
+                    continue
+                    
+                # print(module_name, torch.any(torch.isnan(g_in)))
+                if torch.any(torch.isnan(g_in)):
+                    print(module_name, torch.any(torch.isnan(g_in)))
+                    print(f"{module_name}'s {i}th input gradient is nan")
+                    import pdb; pdb.set_trace()
+            for i, g_out in enumerate(grad_output):
+                if torch.any(torch.isnan(g_out)):
+                    print(module_name, torch.any(torch.isnan(g_in)))
+                    print(f"{module_name}'s {i}th output gradient is nan")
+                    import pdb; pdb.set_trace()
+                
+    return BackwardHook(module_name)
 class AverageMeter(object):
     def __init__(self):
         self.loss_dict = defaultdict(list)
@@ -145,6 +173,9 @@ class VolSDFTrainRunner():
         self.model = utils.get_class(self.conf.get_string('train.model_class'))(conf=conf_model)
         if torch.cuda.is_available():
             self.model.cuda()
+        # for name, module in self.model.named_modules():
+            # import pdb; pdb.set_trace()
+            # module.register_full_backward_hook(get_backward_hook(name))
 
         self.loss = utils.get_class(self.conf.get_string('train.loss_class'))(**self.conf.get_config('loss'))
 
@@ -303,9 +334,11 @@ class VolSDFTrainRunner():
                 self.model.train()
 
             self.model.eval()
-            with torch.no_grad():
-                global_junctions = self.model.ffn(self.model.latents).cpu()
-            torch.save(global_junctions, os.path.join(self.junctions_path, str(epoch) + '.pth'))
+
+            if hasattr(self.model, 'latents'):
+                with torch.no_grad():
+                    global_junctions = self.model.ffn(self.model.latents).cpu()
+                torch.save(global_junctions, os.path.join(self.junctions_path, str(epoch) + '.pth'))
                 
 
             self.train_dataset.change_sampling_idx(self.num_pixels)

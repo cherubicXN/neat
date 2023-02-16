@@ -46,14 +46,15 @@ class VolSDFLoss(nn.Module):
 
     def forward(self, model_outputs, ground_truth):
         self.steps +=1
-        if self.steps >= 7047:
-            import pdb; pdb.set_trace()
+        # if self.steps >= 7047:
+        #     import pdb; pdb.set_trace()
         lines2d_gt, lines_weight =ground_truth['lines2d'][0].cuda().split(4,dim=-1)
         if 'labels' in ground_truth:
             lines_weight = lines_weight*ground_truth['labels'][0,:,None].cuda()
+        lines_weight = torch.ones_like(lines_weight).cuda()
         lines2d = model_outputs['lines2d'].reshape(-1,4)
 
-        l2d_loss_uncalib, threshold = self.get_line_loss(lines2d, lines2d_gt, lines_weight)
+        l2d_loss_uncalib, threshold = self.get_line_loss(lines2d, lines2d_gt, lines_weight) #TODO: check if the lines_weight is necessary
         # import pdb; pdb.set_trace()
         count = (threshold<100).sum()
         lines2d_gt_calib = lines2d_gt.reshape(-1,2)
@@ -61,7 +62,8 @@ class VolSDFLoss(nn.Module):
         lines2d_gt_calib_h =  (model_outputs['K'].inverse()@lines2d_gt_calib_h.t()).t()
         lines2d_gt_calib = lines2d_gt_calib_h[:,:2]/lines2d_gt_calib_h[:,2,None]
         lines2d_gt_calib = lines2d_gt_calib.reshape(-1,4)
-        lines2d_loss, _ = self.get_line_loss(model_outputs['lines2d_calib'].reshape(-1,4), lines2d_gt_calib, lines_weight)
+
+        lines2d_loss, _ = self.get_line_loss(model_outputs['lines2d_calib'].reshape(-1,4), lines2d_gt_calib, lines_weight*(threshold<100).reshape(-1,1))
         
 
         rgb_gt = ground_truth['rgb'].cuda()
@@ -72,53 +74,11 @@ class VolSDFLoss(nn.Module):
         else:
             eikonal_loss = torch.tensor(0.0).cuda().float()
 
-        j3d_local = model_outputs['j3d_local']
-        j3d_global = model_outputs['j3d_global']
-        j2d_local = model_outputs['j2d_local'].detach()
-        j2d_global = model_outputs['j2d_global'].detach()
-        j2d_local_calib = model_outputs['j2d_local_calib']
-        j2d_global_calib = model_outputs['j2d_global_calib']
-
-        with torch.no_grad():
-            j3d_cost = torch.cdist(j3d_local,j3d_global, p=1)
-            j2d_cost = torch.cdist(j2d_local_calib,j2d_global_calib, p=1)
-            jcost_all = j3d_cost + j2d_cost*0.01
-        # assign = linear_sum_assignment(j3d_cost.detach().cpu().numpy())
-            jcost_all[torch.isnan(jcost_all)] = 100000
-        
-        assign = linear_sum_assignment(jcost_all.detach().cpu().numpy())
-        assign_cost = jcost_all[assign[0],assign[1]]
-        with torch.no_grad():
-            # loss_j2d_u = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]])**2,dim=-1).mean()
-            loss_j2d_u_arr = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]]).abs(),dim=-1)
-            # loss_j2d_u = loss_j2d_u_arr.mean()
-
-        assign_mask = loss_j2d_u_arr < 10
-        loss_j2d_u = torch.sum(loss_j2d_u_arr*assign_mask)/torch.sum(assign_mask).clamp_min(1)
-        loss_j3d = torch.sum((j3d_local[assign[0]]-j3d_global[assign[1]]).abs(),dim=-1)
-        # loss_j3d = torch.mean(loss_j3d*assign_mask)
-        loss_j3d = torch.mean(loss_j3d)
-        loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]]).abs(),dim=-1)
-        loss_j2d = torch.mean(loss_j2d)
-        # loss_j2d = torch.mean(loss_j2d*assign_mask)
-        # loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]])**2,dim=-1).mean()
-        
-        
-
-        # if self.steps%(49*20)==0:
-            # print('loss',rgb_loss.item(),eikonal_loss.item(),lines2d_loss.item(),loss_j3d.item())
-            # import pdb; pdb.set_trace()
-        
         loss = rgb_loss + \
-               self.eikonal_weight * eikonal_loss + \
-               self.line_weight*lines2d_loss + \
-               self.junction_3d_weight*loss_j3d + \
-               self.junction_2d_weight*loss_j2d
-                # loss_j2d*0.0001
-                # loss_j2d*0.01
-            #    loss_cls*0.0
-
-        
+            self.eikonal_weight * eikonal_loss + \
+            self.line_weight*lines2d_loss #+ \
+            # self.junction_3d_weight*loss_j3d + \
+            # self.junction_2d_weight*loss_j2d
         output = {
             'loss': loss,
             # 'cls_loss': loss_cls,
@@ -126,12 +86,69 @@ class VolSDFLoss(nn.Module):
             'eikonal_loss': eikonal_loss,
             'line_loss': lines2d_loss,
             'l2d_loss': l2d_loss_uncalib,
-            'j3d_loss': loss_j3d,
-            'j2d_loss': loss_j2d,
-            'j2d_stat': loss_j2d_u,
             'count': count,
-            'jcount': assign_mask.sum(),
+            'j3d_loss': torch.tensor(0.0).cuda().float(),
+            'j2d_loss': torch.tensor(0.0).cuda().float(),
+            'j2d_stat': torch.tensor(0.0).cuda().float(),
+            'jcount': torch.tensor(0.0).cuda().float(),
         }
+        if model_outputs['j3d_local'].shape[0] > 0:
+            j3d_local = model_outputs['j3d_local']
+            j3d_global = model_outputs['j3d_global']
+            j2d_local = model_outputs['j2d_local'].detach()
+            j2d_global = model_outputs['j2d_global'].detach()
+            j2d_local_calib = model_outputs['j2d_local_calib']
+            j2d_global_calib = model_outputs['j2d_global_calib']
+
+            with torch.no_grad():
+                j3d_cost = torch.cdist(j3d_local,j3d_global, p=1)
+                j2d_cost = torch.cdist(j2d_local_calib,j2d_global_calib, p=1)
+                jcost_all = j3d_cost + j2d_cost*0.01
+            # assign = linear_sum_assignment(j3d_cost.detach().cpu().numpy())
+                jcost_all[torch.isnan(jcost_all)] = 100000
+            
+            assign = linear_sum_assignment(jcost_all.detach().cpu().numpy())
+            assign_cost = jcost_all[assign[0],assign[1]]
+            with torch.no_grad():
+                # loss_j2d_u = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]])**2,dim=-1).mean()
+                loss_j2d_u_arr = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]]).abs(),dim=-1)
+                # loss_j2d_u = loss_j2d_u_arr.mean()
+
+            assign_mask = loss_j2d_u_arr < 10
+            loss_j2d_u = torch.sum(loss_j2d_u_arr*assign_mask)/torch.sum(assign_mask).clamp_min(1)
+            loss_j3d = torch.sum((j3d_local[assign[0]]-j3d_global[assign[1]]).abs(),dim=-1)
+            # loss_j3d = torch.mean(loss_j3d*assign_mask)
+            loss_j3d = torch.mean(loss_j3d)
+            loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]]).abs(),dim=-1)
+            loss_j2d = torch.mean(loss_j2d)
+
+            loss += self.junction_3d_weight*loss_j3d + \
+                self.junction_2d_weight*loss_j2d 
+
+            output['j3d_loss'] = loss_j3d
+            output['j2d_loss'] = loss_j2d
+            output['j2d_stat'] = loss_j2d_u
+            output['jcount'] = assign_mask.sum()
+            # 'j3d_loss': torch.tensor(0.0).cuda().float(),
+            # 'j2d_loss': torch.tensor(0.0).cuda().float(),
+            # 'j2d_stat': torch.tensor(0.0).cuda().float(),
+            # 'jcount': torch.tensor(0.0).cuda().float(),
+
+        # loss_j2d = torch.mean(loss_j2d*assign_mask)
+        # loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]])**2,dim=-1).mean()
+        
+        #check if nan
+        # if torch.isnan(loss_j3d) or torch.isnan(loss_j2d):
+            # import pdb; pdb.set_trace()
+
+        # if self.steps%(49*20)==0:
+            # print('loss',rgb_loss.item(),eikonal_loss.item(),lines2d_loss.item(),loss_j3d.item())
+            # import pdb; pdb.set_trace()
+        
+
+   
+        
+        
         if 'median' in model_outputs:
             output['median'] = model_outputs['median']
         # if self.steps>500:

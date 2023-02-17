@@ -51,7 +51,7 @@ class VolSDFLoss(nn.Module):
         lines2d_gt, lines_weight =ground_truth['lines2d'][0].cuda().split(4,dim=-1)
         if 'labels' in ground_truth:
             lines_weight = lines_weight*ground_truth['labels'][0,:,None].cuda()
-        lines_weight = torch.ones_like(lines_weight).cuda()
+        # lines_weight = torch.ones_like(lines_weight).cuda()
         lines2d = model_outputs['lines2d'].reshape(-1,4)
 
         l2d_loss_uncalib, threshold = self.get_line_loss(lines2d, lines2d_gt, lines_weight) #TODO: check if the lines_weight is necessary
@@ -103,49 +103,23 @@ class VolSDFLoss(nn.Module):
             with torch.no_grad():
                 j3d_cost = torch.cdist(j3d_local,j3d_global, p=1)
                 j2d_cost = torch.cdist(j2d_local_calib,j2d_global_calib, p=1)
-                jcost_all = j3d_cost + j2d_cost*0.01
-            # assign = linear_sum_assignment(j3d_cost.detach().cpu().numpy())
-                jcost_all[torch.isnan(jcost_all)] = 100000
+                jcost_all = j3d_cost + j2d_cost*0.1
             
             assign = linear_sum_assignment(jcost_all.detach().cpu().numpy())
             assign_cost = jcost_all[assign[0],assign[1]]
-            with torch.no_grad():
-                # loss_j2d_u = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]])**2,dim=-1).mean()
-                loss_j2d_u_arr = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]]).abs(),dim=-1)
-                # loss_j2d_u = loss_j2d_u_arr.mean()
 
-            assign_mask = loss_j2d_u_arr < 10
-            loss_j2d_u = torch.sum(loss_j2d_u_arr*assign_mask)/torch.sum(assign_mask).clamp_min(1)
             loss_j3d = torch.sum((j3d_local[assign[0]]-j3d_global[assign[1]]).abs(),dim=-1)
-            # loss_j3d = torch.mean(loss_j3d*assign_mask)
             loss_j3d = torch.mean(loss_j3d)
             loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]]).abs(),dim=-1)
             loss_j2d = torch.mean(loss_j2d)
 
             loss += self.junction_3d_weight*loss_j3d + \
                 self.junction_2d_weight*loss_j2d 
+            jcount = (assign_cost<10).sum()
 
             output['j3d_loss'] = loss_j3d
             output['j2d_loss'] = loss_j2d
-            output['j2d_stat'] = loss_j2d_u
             output['jcount'] = assign_mask.sum()
-            # 'j3d_loss': torch.tensor(0.0).cuda().float(),
-            # 'j2d_loss': torch.tensor(0.0).cuda().float(),
-            # 'j2d_stat': torch.tensor(0.0).cuda().float(),
-            # 'jcount': torch.tensor(0.0).cuda().float(),
-
-        # loss_j2d = torch.mean(loss_j2d*assign_mask)
-        # loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]])**2,dim=-1).mean()
-        
-        #check if nan
-        # if torch.isnan(loss_j3d) or torch.isnan(loss_j2d):
-            # import pdb; pdb.set_trace()
-
-        # if self.steps%(49*20)==0:
-            # print('loss',rgb_loss.item(),eikonal_loss.item(),lines2d_loss.item(),loss_j3d.item())
-            # import pdb; pdb.set_trace()
-        
-
    
         
         

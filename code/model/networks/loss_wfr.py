@@ -119,7 +119,7 @@ class VolSDFLoss(nn.Module):
 
             output['j3d_loss'] = loss_j3d
             output['j2d_loss'] = loss_j2d
-            output['jcount'] = assign_mask.sum()
+            output['jcount'] = jcount
    
         
         

@@ -113,12 +113,17 @@ class VolSDFLoss(nn.Module):
             loss_j2d = torch.sum((j2d_local_calib[assign[0]]-j2d_global_calib[assign[1]]).abs(),dim=-1)
             loss_j2d = torch.mean(loss_j2d)
 
+            with torch.no_grad():
+                loss_j2d_u = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]]).abs(),dim=-1).mean()
+
+
             loss += self.junction_3d_weight*loss_j3d + \
                 self.junction_2d_weight*loss_j2d 
             jcount = (assign_cost<10).sum()
 
             output['j3d_loss'] = loss_j3d
             output['j2d_loss'] = loss_j2d
+            output['j2d_stat'] = loss_j2d_u
             output['jcount'] = jcount
    
         

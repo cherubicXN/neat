@@ -12,6 +12,7 @@
   <tr>
         <th>ABC-000075213</th><th colspan="4">exps/abc_000075213_neat/2023_02_17_09_50_32</th>
     </tr>
+  </table>
   <table>
     <tr>
         <th colspan="5">

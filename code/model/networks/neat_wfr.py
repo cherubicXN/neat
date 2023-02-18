@@ -328,7 +328,12 @@ class VolSDFNetwork(nn.Module):
         
         x = K@(R@X.t()+T)
         x = x.t()
-        x = x/x[:,-1:]
+        # sign = x[:,-1:]>=0
+        # x = x/x[:,-1:]
+        denominator = x[:,-1:]
+        sign = torch.where(denominator>=0, torch.ones_like(denominator), -torch.ones_like(denominator))
+        eps = torch.where(denominator.abs()<1e-8, torch.ones_like(denominator)*1e-8, torch.zeros_like(denominator))
+        x = x/(denominator+eps*sign)
         x = x.reshape(*shape)[...,:2]
         return x
     
@@ -403,6 +408,8 @@ class VolSDFNetwork(nn.Module):
         lines3d  = self.attraction_network.forward(points3d.detach(), points_gradients.detach(), points_features.detach())
         # lines3d = torch.stack((e1,e2),dim=1)
         lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
+        # if torch.isinf(lines2d).any():
+            # import pdb; pdb.set_trace()
         lines2d_calib = self.project2D(torch.eye(3).cuda(), R, T, lines3d)
         # import pdb; pdb.set_trace()
         line_ray_d, line_ray_o = rend_util.get_camera_params(input['uv_proj'], pose, intrinsics)

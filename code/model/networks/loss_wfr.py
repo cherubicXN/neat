@@ -64,7 +64,8 @@ class VolSDFLoss(nn.Module):
         lines2d_gt_calib = lines2d_gt_calib.reshape(-1,4)
 
         lines2d_loss, _ = self.get_line_loss(model_outputs['lines2d_calib'].reshape(-1,4), lines2d_gt_calib, lines_weight*(threshold<100).reshape(-1,1))
-        
+        if torch.isnan(lines2d_loss):
+            import pdb; pdb.set_trace()        
 
         rgb_gt = ground_truth['rgb'].cuda()
 

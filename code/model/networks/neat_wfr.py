@@ -407,7 +407,7 @@ class VolSDFNetwork(nn.Module):
 
         lines3d  = self.attraction_network.forward(points3d.detach(), points_gradients.detach(), points_features.detach())
         # lines3d = torch.stack((e1,e2),dim=1)
-        lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
+        lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d.detach())
         # if torch.isinf(lines2d).any():
             # import pdb; pdb.set_trace()
         lines2d_calib = self.project2D(torch.eye(3).cuda(), R, T, lines3d)

@@ -55,7 +55,6 @@ class VolSDFLoss(nn.Module):
         lines2d = model_outputs['lines2d'].reshape(-1,4)
 
         l2d_loss_uncalib, threshold = self.get_line_loss(lines2d, lines2d_gt, lines_weight) #TODO: check if the lines_weight is necessary
-        # import pdb; pdb.set_trace()
         count = (threshold<100).sum()
         lines2d_gt_calib = lines2d_gt.reshape(-1,2)
         lines2d_gt_calib_h = torch.cat([lines2d_gt_calib, torch.ones_like(lines2d_gt_calib[:,:1])],dim=-1)

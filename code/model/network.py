@@ -83,7 +83,7 @@ class ImplicitNetwork(nn.Module):
 
             if l < self.num_layers - 2:
                 x = self.softplus(x)
-
+        # import pdb; pdb.set_trace()
         return x
 
     def gradient(self, x):

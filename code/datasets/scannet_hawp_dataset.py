@@ -46,6 +46,7 @@ class SceneDataset(torch.utils.data.Dataset):
         self.wireframes = []
         self.lines = []
         self.labels = []
+        self.att_points = []
         self.distance = distance_threshold
         self.score_threshold = 0.05
         for path in image_paths:
@@ -86,9 +87,10 @@ class SceneDataset(torch.utils.data.Dataset):
         from tqdm import tqdm
         print('precomputing the support regions of 2D attraction fields')
         for lines in tqdm(self.lines):
-            mask, labels = self.compute_point_line_attraction(lines)
+            mask, labels, att_points = self.compute_point_line_attraction(lines)
             self.masks.append(mask)
             self.labels.append(labels)
+            self.att_points.append(att_points)
     def __len__(self):
         return self.n_images
 
@@ -142,7 +144,12 @@ class SceneDataset(torch.utils.data.Dataset):
 
         mask *= (pos_angle>0)
         mask *= (neg_angle<0)
-        return mask.cpu().reshape(-1), labels.cpu().reshape(-1)
+
+        offsets = lmap[:2].permute(1,2,0)
+        proj_points = torch.zeros((*mask.shape,2),device=mask.device,dtype=torch.float32)
+        proj_points[mask,:] = offsets[mask] + mask.nonzero()[:,[1,0]].float()
+        return mask.cpu().reshape(-1), labels.cpu().reshape(-1), proj_points.reshape(-1,2)
+
     
     def __getitem__(self, idx):
         uv = np.mgrid[0:self.img_res[0], 0:self.img_res[1]].astype(np.int32)
@@ -156,6 +163,7 @@ class SceneDataset(torch.utils.data.Dataset):
         # mask, labels = self.compute_point_line_attraction(lines)
         sample = {
             "uv": uv,
+            "uv_proj": self.att_points[idx],
             "juncs2d": self.wireframes[idx].vertices,
             "intrinsics": self.intrinsics_all[idx],
             "pose": self.pose_all[idx],
@@ -174,7 +182,7 @@ class SceneDataset(torch.utils.data.Dataset):
             # sampling_idx = self.masks[idx].reshape(-1).nonzero().flatten().numpy()
             # sampling_idx = np.random.choice(sampling_idx,len(self.sampling_idx))
             sampling_idx = mask.nonzero().flatten()
-            sampling_idx = np.random.choice(sampling_idx,len(self.sampling_idx))
+            sampling_idx = np.random.choice(sampling_idx,len(self.sampling_idx),replace=False)
             ground_truth['rgb'] = self.rgb_images[idx][sampling_idx, :]
             ground_truth['depth_colmap'] = self.depth_colmap[idx][sampling_idx, :]
             ground_truth['lines2d'] = lines[labels[sampling_idx]]
@@ -182,6 +190,7 @@ class SceneDataset(torch.utils.data.Dataset):
             # sample["uv"] = uv[self.sampling_idx, :]
             sample['labels'] = labels[sampling_idx]
             sample['uv'] = uv[sampling_idx,:]
+            sample['uv_proj'] = self.att_points[idx][sampling_idx]
 
             # import pdb; pdb.set_trace()
 

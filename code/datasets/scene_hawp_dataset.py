@@ -153,6 +153,8 @@ class SceneDataset(torch.utils.data.Dataset):
         # lines = self.wireframes[idx].line_segments(self.score_threshold)
         lines = self.lines[idx]
         mask = self.masks[idx]
+        # mask = torch.rand_like(mask.float())<10000
+        
         labels = self.labels[idx]
         # mask, labels = self.compute_point_line_attraction(lines)
         sample = {
@@ -175,7 +177,11 @@ class SceneDataset(torch.utils.data.Dataset):
             # sampling_idx = self.masks[idx].reshape(-1).nonzero().flatten().numpy()
             # sampling_idx = np.random.choice(sampling_idx,len(self.sampling_idx))
             sampling_idx = mask.nonzero().flatten()
-            sampling_idx = np.random.choice(sampling_idx,len(self.sampling_idx))
+            # sampling_idx = np.random.choice(sampling_idx,len(self.sampling_idx),replace=False)
+            # import pdb; pdb.set_trace()
+            sampling_idx = sampling_idx[torch.randperm(sampling_idx.numel())[:len(self.sampling_idx)]] 
+            # sampling_idx = sampling_idx[torch.randperm(sampling_idx.numel())][:len(self.sampling_idx)]
+
             ground_truth['rgb'] = self.rgb_images[idx][sampling_idx, :]
             ground_truth['lines2d'] = lines[labels[sampling_idx]]
             sample['lines'] = lines[labels[sampling_idx]]

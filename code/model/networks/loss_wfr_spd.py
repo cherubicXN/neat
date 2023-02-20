@@ -87,8 +87,9 @@ class VolSDFLoss(nn.Module):
 
         depth_loss = self.get_depth_loss(model_outputs['depth'], ground_truth['depth_colmap'].cuda())
         loss = rgb_loss + \
+            depth_loss + \
             self.eikonal_weight * eikonal_loss + \
-            self.line_weight*lines2d_loss #+ \
+            self.line_weight*lines2d_loss 
             # self.junction_3d_weight*loss_j3d + \
             # self.junction_2d_weight*loss_j2d
         output = {

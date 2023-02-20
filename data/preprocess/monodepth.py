@@ -81,13 +81,20 @@ def parse_args():
     parser.set_defaults(pretrained_models='/home/xn/repo/omnidata/omnidata_tools/torch/pretrained_models/')
 
     parser.add_argument('--task', dest='task', help="normal or depth")
-    parser.set_defaults(task='NONE')
+    parser.set_defaults(task='depth')
 
     parser.add_argument('--image_root', dest='root', help="image_directory")
+    parser.add_argument('--dest', dest='dest', help="destination directory", default=None)
     
     parser.add_argument('--ext', choices=['png', 'jpg'], default='png', help="image format")
 
-    return parser.parse_args()
+    opts = parser.parse_args()
+    if opts.dest is None:
+        dest = os.path.dirname(opts.root)
+        dest = os.path.join(dest, 'omni{}'.format(opts.task))
+        opts.dest = dest
+
+    return opts
 
 def main():
     args = parse_args()
@@ -122,13 +129,20 @@ def main():
     filenames = [os.path.join(args.root,f) for f in os.listdir(args.root) if f.endswith(args.ext)]
     
     depth_list = []
+
+    dest_dir = args.dest
+    
+    os.makedirs(dest_dir, exist_ok=True)
+    trans_topil = transforms.ToPILImage()
     from tqdm import tqdm
     for f in tqdm(filenames):
         depth = get_depth(model, f)
         depth_list.append(depth)
-
-    #TODO: save depth_list to a file
-    import pdb; pdb.set_trace()
+        basename = os.path.basename(f)[:-4]
+        out_f = os.path.join(dest_dir, basename+'.npy')
+        np.save(out_f, depth)
+        plt.imsave(os.path.join(dest_dir, basename+'.png'), depth, cmap='viridis')
+        print(out_f)
 
 def get_depth(model, img_path):
     image_resize = 384

@@ -374,7 +374,7 @@ class VolSDFNetwork(nn.Module):
 
         lines3d = self.attraction_network.forward(points_flat, gradients, dirs_flat, feature_vectors)
         lines3d = lines3d.reshape(-1, N_samples, 2,3)
-        lines3d = torch.sum(weights[:,:,None,None]*lines3d,dim=1)
+        lines3d = torch.sum(weights[:,:,None,None].detach()*lines3d,dim=1)
         if self.white_bkgd:
             acc_map = torch.sum(weights, -1)
             rgb_values = rgb_values + (1. - acc_map[..., None]) * self.bg_color.unsqueeze(0)

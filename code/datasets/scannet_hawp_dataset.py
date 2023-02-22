@@ -22,6 +22,7 @@ class SceneDataset(torch.utils.data.Dataset):
                  n_images=-1,
                  line_detector = 'hawp',
                  distance_threshold = 5.0,
+                 depth_name = 'depth_colmap',
                  ):
 
         self.instance_dir = os.path.join('../data', data_dir, '{0}'.format(scan_id))
@@ -61,8 +62,7 @@ class SceneDataset(torch.utils.data.Dataset):
             pose_c2w = np.loadtxt(pose_path)
             self.pose_all.append(torch.from_numpy(pose_c2w).float())
 
-            depth_path = f'{self.instance_dir}/depth_colmap/{img_id}.npy'
-
+            depth_path = f"{self.instance_dir}/{depth_name}/{img_id}.npy"
             if os.path.exists(depth_path):
                 depth_colmap = np.load(depth_path)
                 depth_colmap[depth_colmap > 2.0] = 0

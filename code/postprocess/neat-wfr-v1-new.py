@@ -241,7 +241,6 @@ def initial_recon(model, eval_dataloader, chunksize, *,
             scores_all.append(scores.cpu())
             print(len(gjc_dict.keys()))
 
-    # import pdb; pdb.set_trace()
     
     lines3d_all = torch.cat(lines3d_all,dim=0)
     scores_all = torch.cat(scores_all,dim=0)
@@ -308,7 +307,7 @@ def wireframe_recon(**kwargs):
     root = os.path.join(*conf_path.split('/')[:-1])
 
     dataset_conf = conf.get_config('dataset')
-    dataset_conf['distance_threshold'] = float(kwargs['distance'])
+    dataset_conf['distance_threshold'] = float(1)
 
     eval_dataset = utils.get_class(conf.get_string('train.dataset_class'))(**dataset_conf)
 
@@ -330,8 +329,7 @@ def wireframe_recon(**kwargs):
 
     model.eval()
 
-    eval_dataset.distance = kwargs.get('distance',1)
-    eval_dataset.score_threshold = kwargs.get('score',0.05)
+    eval_dataset.distance = 1
 
     eval_dataloader = torch.utils.data.DataLoader(eval_dataset,
                                                       batch_size=1,
@@ -344,7 +342,8 @@ def wireframe_recon(**kwargs):
 
     line_path = os.path.join(wireframe_dir,'{}-wfr.npz'.format(kwargs['checkpoint']))
 
-    initial_recon_results = initial_recon(model, eval_dataloader, kwargs['chunksize'])
+    initial_recon_results = initial_recon(model, eval_dataloader, kwargs['chunksize'],
+        DEBUG=False, line_dis_threshold = kwargs['distance'], device='cuda')
     lines3d_wfi_checked = visibility_checking(initial_recon_results['lines3d_wfi'], eval_dataloader, model, mindis_th = 25, min_visible_views=1)
     lines3d_wfr_checked = visibility_checking(initial_recon_results['lines3d_wfr'], eval_dataloader, model, mindis_th = 25, min_visible_views=1)
     initial_recon_results['lines3d_wfi_checked'] = lines3d_wfi_checked
@@ -352,7 +351,7 @@ def wireframe_recon(**kwargs):
 
     basename = os.path.join(wireframe_dir,'{}-{}.npz'.format(kwargs['checkpoint'],'{}'))
 
-    for key in ['wfi', 'wfr', 'wfi_checked', 'wfr_checked']:
+    for key in ['all','wfi', 'wfr', 'wfi_checked', 'wfr_checked']:
         np.savez(basename.format(key), lines3d=initial_recon_results['lines3d_{}'.format(key)].cpu().numpy())
         print('python evaluation/show.py --data {}'.format(basename.format(key)))
 
@@ -368,8 +367,8 @@ if __name__ == '__main__':
     # parser.add_argument('--timestamp', required=True, type=str, help='The experiemnt timestamp to test.')
     parser.add_argument('--checkpoint', default='latest',type=str,help='The trained model checkpoint to test')
     parser.add_argument('--chunksize', default=2048, type=int, help='the chunksize for rendering')
-    parser.add_argument('--dis-th', default=1, type=int, help='the distance threshold of 2D line segments')
-    parser.add_argument('--score-th', default=0.05, type=float, help='the score threshold of 2D line segments')
+    parser.add_argument('--reproj-dis', default=10, type=int, help='the distance threshold of 2D line segments')
+    # parser.add_argument('--score-th', default=0.05, type=float, help='the score threshold of 2D line segments')
 
     opt = parser.parse_args()
 
@@ -384,6 +383,5 @@ if __name__ == '__main__':
     wireframe_recon(conf=opt.conf,
         checkpoint=opt.checkpoint,
         chunksize=opt.chunksize,
-        distance=opt.dis_th,
-        score=opt.score_th,
+        distance=opt.reproj_dis,
     )

@@ -466,11 +466,11 @@ class VolSDFNetwork(nn.Module):
             output['j2d_local_calib'] = junctions2d_calib
             output['j2d_global_calib'] = junctions2d_global_calib
 
-        # if not self.training:
+        if not self.training:
             
-            # points3d_sdf, points_features, points_gradients = self.implicit_network.get_outputs(l3d)
-            # lines3d  = self.attraction_network.forward(l3d.detach(), points_gradients.detach(), points_features.detach())
-            # lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
+            points3d_sdf, points_features, points_gradients = self.implicit_network.get_outputs(l3d)
+            lines3d  = self.attraction_network.forward(l3d.detach(), points_gradients.detach(), points_features.detach())
+            lines2d = self.project2D(intrinsics[0,:3,:3], R, T, lines3d)
             # import pdb; pdb.set_trace()
         output['l3d'] = l3d
 

@@ -113,12 +113,17 @@ def get_wireframe_from_lines_and_junctions(lines, junctions, *,
     cost2 = torch.cdist(ep2, junctions)
     mcost1, midx1 = cost1.min(dim=1)
     mcost2, midx2 = cost2.min(dim=1)
-    is_matched = torch.max(mcost1,mcost2)<torch.norm(ep1-ep2,dim=-1)*rel_matching_distance_threshold
+    is_matched = torch.max(mcost1,mcost2)<torch.norm(ep1-ep2,dim=-1)
+    
+    # if rel_matching_distance_threshold>0:
+        # is_matched *= rel_matching_distance_threshold
 
     graph = torch.zeros((junctions.shape[0], junctions.shape[0]), device=device)
-    pair = torch.stack([torch.min(midx1,midx2),torch.max(midx1,midx2)],dim=1)
-    graph[pair[:,0],pair[:,1]] = 1
-    graph[pair[:,1],pair[:,0]] = 1
+
+    if is_matched.sum()>0:
+        pair = torch.stack([torch.min(midx1,midx2),torch.max(midx1,midx2)],dim=1)[is_matched]
+        graph[pair[:,0],pair[:,1]] = 1
+        graph[pair[:,1],pair[:,0]] = 1
 
     lines3d_wf = junctions[graph.triu().nonzero()]
     return graph, lines3d_wf
@@ -239,7 +244,9 @@ def initial_recon(model, eval_dataloader, chunksize, *,
             points3d_all.append(points3d.cpu())
             lines3d_all.append(lines3d.cpu())
             scores_all.append(scores.cpu())
-            print(len(gjc_dict.keys()))
+            print(len(gjc_dict.keys()),'<--',sum(l.shape[0] for l in lines3d_all))
+            # graph_, lines3d_ajd = get_wireframe_from_lines_and_junctions(lines3d, global_junctions, rel_matching_distance_threshold=0.01)
+            # import pdb; pdb.set_trace()
 
     
     lines3d_all = torch.cat(lines3d_all,dim=0)

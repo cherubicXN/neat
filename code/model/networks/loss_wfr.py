@@ -116,9 +116,13 @@ class VolSDFLoss(nn.Module):
             with torch.no_grad():
                 loss_j2d_u = torch.sum((j2d_local[assign[0]]-j2d_global[assign[1]]).abs(),dim=-1).mean()
 
+            # if loss_regularizer.min().detach()<0.01:
+            # import pdb; pdb.set_trace()
+            # loss_regularizer = -loss_regularizer.mean()
 
             loss += self.junction_3d_weight*loss_j3d + \
                 self.junction_2d_weight*loss_j2d 
+                
             jcount = (assign_cost<10).sum()
 
             output['j3d_loss'] = loss_j3d

@@ -20,7 +20,7 @@
         </th>
     </tr>
     <tr>
-        <th>DTU-24</th><th colspan="4">exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23</th>
+        <th>DTU-24</th><th colspan="4">exps/dtu-rend-d/24/2023_02_23_10_37_49</th>
     </tr>
     <tr>
       <th>Name of experiments</th>

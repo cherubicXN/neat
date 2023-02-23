@@ -16,6 +16,47 @@
   <table>
     <tr>
         <th colspan="5">
+          <img src="exps/dtu-rend-d/24/2023_02_23_10_37_49/wireframes/latest-wfi_checked_record.gif" width="512" />
+        </th>
+    </tr>
+    <tr>
+        <th>DTU-24</th><th colspan="4">exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23</th>
+    </tr>
+    <tr>
+      <th>Name of experiments</th>
+      <th>ACC</th>
+      <th>COMP</th>
+      <th>ACC (Junctions)</th>
+      <th>COMP (Junctions)</th>
+    </tr>
+    <tr>
+    <td>2000-wfi_checked</td>
+    <td><b>0.4279</b></td>
+    <td>6.7207</td>
+    <td rowspan="2"> <b>0.5525</b> </td>
+    <td rowspan="2"> <b>8.5480</b> </td>
+    </tr>
+    <tr>
+    <td>2000-wfi</td>
+    <td>0.6737</td>
+    <td>5.1101</td>
+    </tr>
+    <tr>
+    <td>2000-wfr</td>
+    <td>0.7069</td>
+    <td>5.1203</td>
+    <td rowspan="2"> 0.6549 </td>
+    <td rowspan="2"> 8.6102 </td>
+    </tr>
+    <tr>
+    <td>2000-wfr_checked</td>
+    <td>0.5461</td>
+    <td>7.0043</td>
+    </tr>
+  </table>
+  <table>
+    <tr>
+        <th colspan="5">
           <img src="exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23/wireframes/2000-wfi_checked_record.gif" width="512" />
         </th>
     </tr>

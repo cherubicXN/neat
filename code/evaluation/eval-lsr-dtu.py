@@ -98,7 +98,6 @@ if __name__ == "__main__":
     data_in_obs = data_in[grid_inbound][in_obs]
 
     stl_pcd = o3d.io.read_point_cloud(f'{opt.dataset_dir}/Points/stl/stl{opt.scan:03}_total.ply')
-    import pdb; pdb.set_trace()
     stl = np.asarray(stl_pcd.points)
     nn_engine.fit(stl)
     dist_d2s, idx_d2s = nn_engine.kneighbors(data_in_obs, n_neighbors=1, return_distance=True)

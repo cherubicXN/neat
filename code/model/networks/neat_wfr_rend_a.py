@@ -340,6 +340,38 @@ class VolSDFNetwork(nn.Module):
         clustered_points = torch.tensor(np.array(clustered_points)).float().cuda()
         
         return clustered_points
+
+    def render_rgb(self, input):
+        intrinsics = input["intrinsics"]
+        uv = input["uv"]
+        pose = input["pose"]
+
+        ray_dirs, cam_loc = rend_util.get_camera_params(uv, pose, intrinsics)
+
+        batch_size, num_pixels, _ = ray_dirs.shape
+
+        cam_loc = cam_loc.unsqueeze(1).repeat(1, num_pixels, 1).reshape(-1, 3)
+        ray_dirs = ray_dirs.reshape(-1, 3)
+
+        z_vals, z_samples_eik = self.ray_sampler.get_z_vals(ray_dirs, cam_loc, self)
+        N_samples = z_vals.shape[1]
+
+        rays_d = z_vals.unsqueeze(2) * ray_dirs.unsqueeze(1)
+        depth_ratio = rays_d.norm(dim=-1)
+        points = cam_loc.unsqueeze(1) + rays_d
+        points_flat = points.reshape(-1, 3)
+
+        dirs = ray_dirs.unsqueeze(1).repeat(1,N_samples,1)
+        dirs_flat = dirs.reshape(-1, 3)
+
+        sdf, feature_vectors, gradients = self.implicit_network.get_outputs(points_flat)
+        rgb_flat = self.rendering_network(points_flat, gradients, dirs_flat, feature_vectors)
+        rgb = rgb_flat.reshape(-1, N_samples, 3)
+
+        weights = self.volume_rendering(z_vals, sdf)
+
+        rgb_values = torch.sum(weights.unsqueeze(-1) * rgb, 1)
+        return rgb_values
     def forward(self, input):
         # Parse model input
         intrinsics = input["intrinsics"]

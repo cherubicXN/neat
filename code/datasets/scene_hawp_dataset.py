@@ -4,9 +4,10 @@ import numpy as np
 
 import utils.general as utils
 from utils import rend_util
+from utils.hawp_util import WireframeGraph
 from pathlib import Path
-from sslib import WireframeGraph
-from hawp import _C
+# from sslib import WireframeGraph
+import _C
 import matplotlib.pyplot as plt 
 def _normalize(inp):
     mag = torch.sqrt(inp[0]*inp[0]+inp[1]*inp[1])

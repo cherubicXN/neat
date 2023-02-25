@@ -96,6 +96,12 @@
     </tr>
   </table>
 
+## Installation
+
+1. Go to the directory ``code``, and build the _C by
+   ```dotnetcli
+   python setup.py build_ext --inplace
+   ```
 ## Changelogs
 - v0.0 ([4cef0e6d9545bdca00b22b47892aa952ec1b23b3](https://github.com/cherubicXN/neat/tree/4cef0e6d9545bdca00b22b47892aa952ec1b23b3))
   - Initially build the wireframe reconstruction pipeline 

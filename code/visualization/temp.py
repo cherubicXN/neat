@@ -119,7 +119,7 @@ def wireframe_recon(**kwargs):
     if scan_id != -1:
         dataset_conf['scan_id'] = scan_id
 
-    dataset_conf['distance_threshold'] = 20
+    dataset_conf['distance_threshold'] = 5
     eval_dataset = utils.get_class(conf.get_string('train.dataset_class'))(**dataset_conf)
 
 
@@ -158,32 +158,31 @@ def wireframe_recon(**kwargs):
     utils.mkdir_ifnotexists(wireframe_dir)
     utils.mkdir_ifnotexists(mask_dir)
 
-    line_path = kwargs['data'][:-4]+'-group.npz'
     # line_path = os.path.join(wireframe_dir,'{}-d={}-s={}-fuse.npz'.format(kwargs['checkpoint'],kwargs['distance'],kwargs['score']))
 
     chunksize = kwargs['chunksize']
 
     sdf_threshold = kwargs['sdf_threshold']
 
-    data = np.load(kwargs['data'],allow_pickle=True)
-    if len(data['lines3d'].shape) ==1:
-        lines3d_all = np.concatenate(data['lines3d'],axis=0)
-    else:
-        lines3d_all = data['lines3d']
+    # data = np.load(kwargs['data'],allow_pickle=True)
+    # if len(data['lines3d'].shape) ==1:
+    #     lines3d_all = np.concatenate(data['lines3d'],axis=0)
+    # else:
+    #     lines3d_all = data['lines3d']
 
     device = 'cuda'
-    lines3d_all = torch.tensor(lines3d_all,device=device)
-    junctions_all = lines3d_all.reshape(-1,3).unique(dim=0)
+    # lines3d_all = torch.tensor(lines3d_all,device=device)
+    # junctions_all = lines3d_all.reshape(-1,3).unique(dim=0)
 
-    graph = torch.zeros((junctions_all.shape[0],junctions_all.shape[0]),device=device)
+    # graph = torch.zeros((junctions_all.shape[0],junctions_all.shape[0]),device=device)
 
-    idx1 = torch.cdist(lines3d_all[:,0],junctions_all).min(dim=-1)[1]
-    idx2 = torch.cdist(lines3d_all[:,1],junctions_all).min(dim=-1)[1]
-    graph[idx1,idx2] = 1
-    graph[idx2,idx1] = 1
+    # idx1 = torch.cdist(lines3d_all[:,0],junctions_all).min(dim=-1)[1]
+    # idx2 = torch.cdist(lines3d_all[:,1],junctions_all).min(dim=-1)[1]
+    # graph[idx1,idx2] = 1
+    # graph[idx2,idx1] = 1
     
     # scores_all = torch.tensor(data['scores']).cuda()
-    visibility = torch.zeros((lines3d_all.shape[0],),device=device)
+    # visibility = torch.zeros((lines3d_all.shape[0],),device=device)
     # lines3d_all = []
 
     # maskdirs = os.path.join(evaldir,'masks')
@@ -191,15 +190,17 @@ def wireframe_recon(**kwargs):
     
     # points3d_all = []
     # scores_all = []
-    visibility_score = torch.zeros((lines3d_all.shape[0],),device=device)
+    # visibility_score = torch.zeros((lines3d_all.shape[0],),device=device)
 
-    lines3d_visibility = torch.zeros((lines3d_all.shape[0],len(eval_dataloader)),device=device, dtype=torch.bool)
-    junctions_visibility = torch.zeros((junctions_all.shape[0],len(eval_dataloader)),device=device, dtype=torch.bool)
+    # lines3d_visibility = torch.zeros((lines3d_all.shape[0],len(eval_dataloader)),device=device, dtype=torch.bool)
+    # junctions_visibility = torch.zeros((junctions_all.shape[0],len(eval_dataloader)),device=device, dtype=torch.bool)
 
     images = []
     K_list = []
     R_list = []
     T_list = []
+
+    MR = []
     for indices, model_input, ground_truth in tqdm(eval_dataloader):    
         rgb = ground_truth['rgb'][0].reshape(*eval_dataset.img_res,3)
 
@@ -224,34 +225,17 @@ def wireframe_recon(**kwargs):
         plt.ylim([height-0.5, -0.5])
 
         plt.imshow(rgb[...,::-1])
+        # plt.imshow(mask==1,cmap='gray')
         plt.scatter(lines2d_gt[:,0],lines2d_gt[:,1],color='b',s=0.2,edgecolors='none',zorder=0.5)
         plt.scatter(lines2d_gt[:,2],lines2d_gt[:,3],color='b',s=0.2,edgecolors='none',zorder=0.5)
-        plt.plot([lines2d_gt[:,0],lines2d_gt[:,2]],[lines2d_gt[:,1],lines2d_gt[:,3]],'r-',linewidth=0.2)
-
+        plt.plot([lines2d_gt[:,0],lines2d_gt[:,2]],[lines2d_gt[:,1],lines2d_gt[:,3]],'-',linewidth=0.1)
+        # import pdb; pdb.set_trace()
         plt.savefig(os.path.join(mask_dir,'{:06d}.png'.format(indices.item())),dpi=height)
         plt.close('all')
-        # import pdb; pdb.set_trace()
-        # cv2.imwrite(os.path.join(mask_dir,'{:06d}.png'.format(indices.item())),rgb)
-        
-        # lines2d_all = model.project2D(K,R,T,lines3d_all).reshape(-1,4)
-        # lines2d_gt = lines2d_gt.to(device=device)
-        # # dis = get_overlap_orth_line_dist(lines2d_all.reshape(-1,2,2).cpu().numpy(),lines2d_gt[:,:-1].reshape(-1,2,2).cpu().numpy())
+        MR.append(1-mask.sum()/mask.numel())
 
-        # # import pdb; pdb.set_trace()
-        # dis1 = torch.sum((lines2d_all[:,None]-lines2d_gt[None,:,[0,1,2,3]])**2,dim=-1)
-        # dis2 = torch.sum((lines2d_all[:,None]-lines2d_gt[None,:,[2,3,0,1]])**2,dim=-1)
-        # dis = torch.min(dis1,dis2)
-        # # dis = torch.tensor(dis,device='cuda')
-        
-        # mindis = dis.min(dim=1)[0]
-        # # visibility[mindis<25] += 1
-        # # visibility_score[mindis<25] += torch.exp(-mindis)[mindis<25]
-        # lines3d_visibility[mindis<50,indices[0]] = True
-        images.append(rgb)
-        # K_list.append(K)
-        # R_list.append(R)
-        # T_list.append(T)
-    
+    print(MR[0], MR[5], MR[8])
+    print(sum(MR)/len(MR))
     
     
     
@@ -271,7 +255,7 @@ def wireframe_recon(**kwargs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--conf', type=str, required=True)
-    parser.add_argument('--data', type=str, required=True)
+    # parser.add_argument('--data', type=str, required=True)
     parser.add_argument('--expname', type=str, default='', help='The experiment name to be evaluated.')
     parser.add_argument('--exps_folder', type=str, default='exps', help='The experiments folder name.')
     parser.add_argument('--evals_folder', type=str, default='evals', help='The evaluation folder name.')
@@ -299,7 +283,7 @@ if __name__ == '__main__':
         os.environ["CUDA_VISIBLE_DEVICES"] = '{0}'.format(gpu)
     wireframe_recon(conf=opt.conf,
         expname=opt.expname,
-        data=opt.data,
+        # data=opt.data,
         exps_folder_name=opt.exps_folder,
         evals_folder_name=opt.evals_folder,
         timestamp=opt.timestamp,

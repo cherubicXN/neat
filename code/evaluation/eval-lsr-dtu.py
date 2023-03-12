@@ -31,7 +31,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str,required=True,help='the path of the reconstructed wireframe model')
     parser.add_argument('--scan', type=int, default=1)
-    parser.add_argument('--cam', type=str,required=True,help='the path of cam')
+    parser.add_argument('--cam', type=str,default=None,help='the path of cam')
     parser.add_argument('--score', type=float, default=None)
     parser.add_argument('--threshold', type=float, default=1., help='dist to surface threshold')
     parser.add_argument('--dataset_dir', type=str, default='/home/xn/datasets/DTU')
@@ -41,6 +41,9 @@ if __name__ == "__main__":
     parser.add_argument('--noscale', default=False, action='store_true')
 
     opt = parser.parse_args()
+    if opt.cam is None:
+        opt.cam = '../data/DTU/scan{}/cameras.npz'.format(opt.scan)
+
     thresh = opt.downsample_density
 
     camera = np.load(opt.cam)
@@ -57,6 +60,17 @@ if __name__ == "__main__":
     if opt.score is not None:
         scores = data['scores']
         lines3d = lines3d[scores<opt.score]
+
+    endpoints3d = lines3d.reshape(-1,3)
+    endpoints3d = np.concatenate((endpoints3d, np.ones((endpoints3d.shape[0], 1))), axis=1)
+    endpoints3d = global_scale_mat@(endpoints3d.transpose())
+    endpoints3d = (endpoints3d[:3]/endpoints3d[3:]).transpose()
+    endpoints3d = endpoints3d.reshape(-1,2,3)
+    mean_length = np.mean(np.linalg.norm(endpoints3d[:,0]-endpoints3d[:,1],axis=1))
+    num_lines = lines3d.shape[0]
+    print('mean length: ', mean_length)
+    print('num lines: ', num_lines)
+    # import pdb; pdb.set_trace()
     t = np.linspace(0, 1,32).reshape(1,-1,1)
 
     lines3d =  (lines3d[:,:1]*t)+(lines3d[:,1:]*(1-t))

@@ -286,6 +286,7 @@ def example_usage():
         intrinsics_all.append(intrinsics)
         pose_all.append(pose)
 
+    import pdb; pdb.set_trace()
     
     pose_quats = []
     K = None
@@ -333,6 +334,13 @@ def example_usage():
     cmd = 'colmap feature_extractor --database_path {} --image_path {} > {}/colmap_output.txt'.format( args.database_path,
         image_root,
         outroot)
+
+    print('colmap feature_extractor --database_path {} --image_path {} > {}/colmap_output.txt'.format(
+        args.database_path,
+        image_root,
+        outroot
+    ))
+    import pdb; pdb.set_trace()
     os.system('colmap feature_extractor --database_path {} --image_path {} > {}/colmap_output.txt'.format(
         args.database_path,
         image_root,
@@ -366,19 +374,25 @@ def example_usage():
     db.close()
 
     os.makedirs(osp.join(outroot,'sparse'),exist_ok=True)
-    os.system(
-        'colmap point_triangulator --database_path {} --image_path {} --input_path {} --output_path {}'.format(
+    print('colmap point_triangulator --database_path {} --image_path {} --input_path {} --output_path {}'.format(
             args.database_path,
             image_root,
             outroot,
             osp.join(outroot,'sparse')
-        )
-    )
-    os.system(
-            'colmap model_converter --input_path {} --output_path {} --output_type txt'.format(
-                osp.join(outroot,'sparse'),
-                outroot
-            ))
+        ))
+    # os.system(
+    #     'colmap point_triangulator --database_path {} --image_path {} --input_path {} --output_path {}'.format(
+    #         args.database_path,
+    #         image_root,
+    #         outroot,
+    #         osp.join(outroot,'sparse')
+    #     )
+    # )
+    # os.system(
+    #         'colmap model_converter --input_path {} --output_path {} --output_type txt'.format(
+    #             osp.join(outroot,'sparse'),
+    #             outroot
+    #         ))
 
     # if os.path.exists(args.database_path):
         # os.remove(args.database_path)

@@ -342,6 +342,7 @@ class VolSDFNetwork(nn.Module):
         return clustered_points
 
     def render_rgb(self, input):
+        assert not self.training
         intrinsics = input["intrinsics"]
         uv = input["uv"]
         pose = input["pose"]

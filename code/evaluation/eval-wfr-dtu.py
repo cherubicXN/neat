@@ -43,7 +43,7 @@ def evaluate_junctions(junctions3d, global_scale_mat, opt):
         if mask[curr]:
             mask[idxs] = 0
             mask[curr] = 1
-    data_down = data_pcd[mask]
+    data_down = data_pcd#[mask]
     obs_mask_file = loadmat(f'{opt.dataset_dir}/ObsMask/ObsMask{opt.scan}_10.mat')
     ObsMask, BB, Res = [obs_mask_file[attr] for attr in ['ObsMask', 'BB', 'Res']]
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str,required=True,help='the path of the reconstructed wireframe model')
     parser.add_argument('--scan', type=int, default=1)
-    parser.add_argument('--cam', type=str,required=True,help='the path of cam')
+    parser.add_argument('--cam', type=str,default=None,help='the path of cam')
     parser.add_argument('--score', type=float, default=None)
     parser.add_argument('--threshold', type=float, default=1., help='dist to surface threshold')
     parser.add_argument('--dataset_dir', type=str, default='/home/xn/datasets/DTU')
@@ -95,23 +95,34 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     thresh = opt.downsample_density
 
+    if opt.cam is None:
+        opt.cam = '../data/DTU/scan{}/cameras.npz'.format(opt.scan)
+    
     camera = np.load(opt.cam)
     global_scale_mat = camera['scale_mat_0']
-    
+
     if opt.noscale:
         global_scale_mat = np.eye(4)
-    data = torch.load(opt.data, map_location='cpu')
-    # data = np.load(opt.data,allow_pickle=True)
-    
-    for key in ['initial', 'refined']:
-        junctions3d = data['junctions3d_{}'.format(key)]
-        graph = data['graph_{}'.format(key)]
-        junctions3d = junctions3d[graph.sum(dim=-1)>0]
-   
+
+    key = 'initial'
+    if opt.data.endswith('.pth'):
+        data = torch.load(opt.data, map_location='cpu')
+        # junctions3d = data['junctions3d_{}'.format(key)]
+        junctions3d = data['lines3d_wfi_checked'].reshape(-1,3).unique(dim=0)
         N = junctions3d.shape[0]
 
         acc, comp = evaluate_junctions(junctions3d, global_scale_mat, opt)
         print('{} junctions:'.format(key), '\t ACC = {}'.format(acc), '\t COMP = {}'.format(comp))
+        print('num junctions: {}'.format(N))
+    else:
+        data = np.load(opt.data, allow_pickle=True)
+        junctions3d = torch.tensor(data['lines3d']).reshape(-1,3).unique(dim=0)
+        N = junctions3d.shape[0]
+
+        acc, comp = evaluate_junctions(junctions3d, global_scale_mat, opt)
+        print('{} junctions:'.format(key), '\t ACC = {}'.format(acc), '\t COMP = {}'.format(comp))
+        print('num junctions: {}'.format(N))
+        
         
 
     

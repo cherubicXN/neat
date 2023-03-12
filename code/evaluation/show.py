@@ -119,7 +119,7 @@ def linesToOpen3d(lines):
     )
     return lineset
 
-def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=0,t=0, points3d_all = None, show_endpoints = False):
+def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=0,t=0, points3d_all = None, show_endpoints = False, line_width=0.03):
     lineset = linesToOpen3d(lines)
     import matplotlib.pyplot as plt
     from collections import deque
@@ -137,6 +137,7 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
     WireframeVisualizer.rot_theta = ry
     WireframeVisualizer.rot_phi = rz
     WireframeVisualizer.t = t
+    WireframeVisualizer.stop = False
     WireframeVisualizer.done = False
 
 
@@ -251,7 +252,7 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
         lines2d = x2d.reshape(-1,2,2)
 
         if glb.render_dir is not None:
-            img_path = os.path.join(glb.render_dir,'image_{:04d}.png'.format(glb.view_cnt))
+            img_path = os.path.join(glb.render_dir,'image_{:04d}.pdf'.format(glb.view_cnt))
             cam_path = os.path.join(glb.render_dir,'cam_{:04d}.json'.format(glb.view_cnt))
 
             glb.image_path.append(img_path)
@@ -276,6 +277,7 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
                 plt.scatter(lines2d[:,1,0],lines2d[:,1,1],color='b',s=1.2,edgecolors='none',zorder=5)
             # cv2.imwrite(img_path,image)
             plt.savefig(img_path,dpi=600)
+            glb.stop = True
             o3d.io.write_pinhole_camera_parameters(cam_path,param)
             print('saving the rendered image into {}'.format(img_path))
             print('saving the rendering viewpoint into {}'.format(cam_path))
@@ -313,7 +315,7 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
     adjust_viewpoint(vis,0,0,0,0)
     # vis.add_geometry(mesh_frame)
     render_option.line_width = 3
-    vis.register_key_callback(ord('S'), capture_image)
+    vis.register_key_callback(ord('P'), capture_image)
     # vis.register_key_callback(ord('L'), load_view)
     vis.register_key_callback(ord('R'), rotate)
     vis.register_key_callback(ord('W'), lambda x: adjust_viewpoint(x,5,0,0,0))
@@ -330,7 +332,7 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
     vis.run()
     vis.destroy_window()
 
-    if render_dir is None:
+    if render_dir is None or WireframeVisualizer.stop:
         return 
         
     vis = o3d.visualization.VisualizerWithKeyCallback()
@@ -360,8 +362,20 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
     import os.path as osp
     from tqdm import tqdm 
     os.makedirs(render_dir,exist_ok=True)
+    # bboxes = [ [p[...,0].min(),p[...,1].min(),p[...,0].max(),p[...,1].max()] for p in project_lines.values()]
+    # bboxes = np.array(bboxes)
+    # xmin = int(bboxes[:,0].min())
+    # ymin = int(bboxes[:,1].min())
+    # xmax = int(bboxes[:,2].max())+1
+    # ymax = int(bboxes[:,3].max())+1
+
+    # width = max(xmax-xmin,ymax-ymin)
+    # height = max(xmax-xmin,ymax-ymin)
     for i,key in enumerate(tqdm(keys)):
         lines2d = project_lines[key]
+        # lines2d[:,0,:] -= [xmin,ymin]
+        # lines2d[:,1,:] -= [xmin,ymin]
+
         fig = plt.figure()
         fig.set_size_inches(width/height,1,forward=False)
         ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
@@ -369,12 +383,14 @@ def WireframeVisualizer(lines, render_dir = None, cam_dir = None, rx=0, ry=0,rz=
         fig.add_axes(ax)
         plt.xlim([-0.5, width-0.5])
         plt.ylim([height-0.5, -0.5])
-        plt.plot([lines2d[:,0,0],lines2d[:,1,0]],[lines2d[:,0,1],lines2d[:,1,1]],'-',color='black',linewidth=0.05)
+        plt.plot([lines2d[:,0,0],lines2d[:,1,0]],[lines2d[:,0,1],lines2d[:,1,1]],'-',color='black',linewidth=line_width)
         if show_endpoints:
             plt.scatter(lines2d[:,0,0],lines2d[:,0,1],color='b',s=0.2,edgecolors='none',zorder=5)
             plt.scatter(lines2d[:,1,0],lines2d[:,1,1],color='b',s=0.2,edgecolors='none',zorder=5)
             # plt.plot(lines2d[:,0,0],lines2d[:,0,1],'o',color='black',markersize=0.1)
             # plt.plot(lines2d[:,1,0],lines2d[:,1,1],'o',color='black',markersize=0.1)
+        path = osp.join(render_dir,'{:04d}.pdf'.format(i))
+        plt.savefig(path,dpi=width)
         path = osp.join(render_dir,'{:04d}.png'.format(i))
         plt.savefig(path,dpi=width)
         plt.close(fig)
@@ -408,9 +424,10 @@ if __name__ == "__main__":
     parser.add_argument('--data', type=str,required=True,help='the path of the reconstructed wireframe model')
     # parser.add_argument('--imgdir', type=None,)
     parser.add_argument('--save', default=False, action='store_true')
-    parser.add_argument('--pose', default=None, type=str, choices=['dtu'])
+    parser.add_argument('--pose', default=None, type=str, choices=['dtu','scan'])
     parser.add_argument('--show-points', default=False, action='store_true')
     parser.add_argument('--threshold', default=None, type=float)
+    parser.add_argument('--line-width', default=0.03, type=float)
     
 
     opt = parser.parse_args()
@@ -428,6 +445,11 @@ if __name__ == "__main__":
         ry = 0
         rz = -25
         t  = 3
+    elif opt.pose == 'scan':
+        rx = 0
+        ry = 170
+        rz = -45
+        t = 3
     else:
         rx = ry = rz = 0
         t = 3
@@ -461,7 +483,8 @@ if __name__ == "__main__":
     # import pdb; pdb.set_trace()
     # lineset_o3d = linesToOpen3d(lines3d)
     print(lines3d.shape)
-    WireframeVisualizer(lines3d,opt.save, None, rx=rx,ry=ry,rz=rz,t=t, points3d_all=points3d, show_endpoints=opt.show_points)
+    WireframeVisualizer(lines3d,opt.save, None, rx=rx,ry=ry,rz=rz,t=t, points3d_all=points3d, show_endpoints=opt.show_points,
+    line_width=opt.line_width)
 
     # opt = visualizer
 

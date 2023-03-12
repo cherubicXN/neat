@@ -182,6 +182,8 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         global_junctions = global_junctions[argsort]
         glj_sdf = glj_sdf[argsort]
         is_valid = glj_sdf.abs()<0.05
+    else:
+        is_valid = torch.ones_like(global_junctions[:,0], dtype=torch.bool)
     
     # dist = torch.eye(global_junctions.shape[0], device=global_junctions.device) + torch.norm(global_junctions[:,None]-global_junctions[None],dim=-1)
     # is_valid = torch.ones_like(is_valid, dtype=torch.bool)
@@ -197,7 +199,7 @@ def initial_recon(model, eval_dataloader, chunksize, *,
 
     gjc_dict = defaultdict(list)
     # eval_dataloader.dataset.wireframes
-    trimesh.points.PointCloud(global_junctions[is_valid].cpu().numpy()).show()
+    # trimesh.points.PointCloud(global_junctions[is_valid].cpu().numpy()).show()
     graph = torch.zeros((global_junctions.shape[0], global_junctions.shape[0]), device=global_junctions.device)
     for indices, model_input, ground_truth in tqdm(eval_dataloader):
         if DEBUG and indices.item()>5:
@@ -314,8 +316,8 @@ def initial_recon(model, eval_dataloader, chunksize, *,
     # jlist = junction_dict_to_keys(gjc_dict, threshold=5)
     # _, temp = get_wireframe_from_lines_and_junctions(lines3d_all, global_junctions[jlist], rel_matching_distance_threshold=0.3)
     # import pdb; pdb.set_trace()
-    junctions3d_initial = torch.stack([global_junctions[k] for k,v in gjc_dict.items() if v.shape[0]>2])
-    junctions3d_refined = torch.stack([v.mean(dim=0) for v in gjc_dict.values() if v.shape[0]>2])
+    junctions3d_initial = torch.stack([global_junctions[k] for k,v in gjc_dict.items() if v.shape[0]>1])
+    junctions3d_refined = torch.stack([v.mean(dim=0) for v in gjc_dict.values() if v.shape[0]>1])
 
     graph_initial, lines3d_wfi = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_initial.cuda(), rel_matching_distance_threshold=0)
     graph_refined, lines3d_wfr = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_refined.cuda(), rel_matching_distance_threshold=0)
@@ -408,19 +410,30 @@ def wireframe_recon(**kwargs):
     wireframe_dir = os.path.join(root,'wireframes')
     utils.mkdir_ifnotexists(wireframe_dir)
 
-    pth_path = os.path.join(wireframe_dir,'{}-neat.pth'.format(kwargs['checkpoint']))
+    sha256 = make_hash_sha256(
+        {
+            'conf': kwargs['conf'],
+            'checkpoint': kwargs['checkpoint'],
+            'distance': kwargs['distance'],
+            'sdf_junction_refine': kwargs['sdf_junction_refine'],
+        }
+    )[:8]
+    sha256 = sha256.replace('/','n')
+
+    out_basename = '{}-{}'.format(kwargs['checkpoint'],sha256)
+    line_path = os.path.join(wireframe_dir,'{}-wfr.npz'.format(out_basename))
+    pth_path = os.path.join(wireframe_dir,'{}-neat.pth'.format(out_basename))
 
     if os.path.exists(pth_path):
         initial_recon_results = torch.load(pth_path)
 
         loaded_kwargs = initial_recon_results.get('kwargs',{})
     else:
-        loaded_kwargs = {}
+        # loaded_kwargs = {}
     
-    sha256 = make_hash_sha256(kwargs)[:8]
 
     
-    if loaded_kwargs != kwargs:
+    # if loaded_kwargs != kwargs:
         initial_recon_results = initial_recon(
             model, 
             eval_dataloader, 
@@ -428,11 +441,11 @@ def wireframe_recon(**kwargs):
             junc_match_threshold=0.02,
             DEBUG=False, 
             line_dis_threshold = kwargs['distance'], 
-            device='cuda')
+            device='cuda',
+            sdf_junction_refine=kwargs['sdf_junction_refine'],)
         initial_recon_results['kwargs'] = kwargs
 
-    out_basename = '{}-{}'.format(kwargs['checkpoint'],sha256)
-    line_path = os.path.join(wireframe_dir,'{}-wfr.npz'.format(out_basename))
+    
 
     # 5 views for dtu24
     lines3d_wfi_checked = visibility_checking(initial_recon_results['lines3d_wfi'], eval_dataloader, model, mindis_th = kwargs['ckdist'], min_visible_views=kwargs['ckview'])
@@ -464,6 +477,7 @@ if __name__ == '__main__':
     parser.add_argument('--ckview', default=5, type=int, help='the number of views for visibility checking')
 
     parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite the existing results')
+    parser.add_argument('--disable-junction-refine', default=False, action='store_true')
     # parser.add_argument('--score-th', default=0.05, type=float, help='the score threshold of 2D line segments')
 
     opt = parser.parse_args()
@@ -482,5 +496,6 @@ if __name__ == '__main__':
         distance=opt.reproj_dis,
         overwrite=opt.overwrite,
         ckdist = opt.ckdist,
-        ckview = opt.ckview
+        ckview = opt.ckview,
+        sdf_junction_refine=not opt.disable_junction_refine
     )

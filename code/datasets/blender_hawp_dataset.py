@@ -44,7 +44,7 @@ class BlenderDataset(torch.utils.data.Dataset):
         self.intrinsics_all = torch.from_numpy(self.intrinsics_all).float()
         self.pose_all = camera_dict['extrinsics']
         self.pose_all = torch.from_numpy(self.pose_all).float()
-
+        
         self.rgb_images = []
         self.masks = []
         self.wireframes = []
@@ -54,18 +54,25 @@ class BlenderDataset(torch.utils.data.Dataset):
         self.distance = distance_threshold
         self.score_threshold = 0.05
 
-        for path in image_paths:
+        valid_ids = []
+        for i, path in enumerate(image_paths):
             rgb = rend_util.load_rgb(path)
             rgb = rgb.reshape(3, -1).transpose(1, 0)
-            self.rgb_images.append(torch.from_numpy(rgb).float())
             hawp_path = Path(self.instance_dir)/line_detector/Path(path).with_suffix('.json').name
 
             wireframe = WireframeGraph.load_json(hawp_path)
+            if wireframe.vertices.shape[0] == 0 or wireframe.edges.shape[0] == 0:
+                continue
+            if wireframe.line_segments(self.score_threshold).shape[0] == 0:
+                continue
+            valid_ids.append(i)
+            self.rgb_images.append(torch.from_numpy(rgb).float())
             self.wireframes.append(wireframe)
             assert wireframe.frame_height == img_res[0] and wireframe.frame_width ==img_res[1]
             self.lines.append(wireframe.line_segments(self.score_threshold))
-
-
+        self.intrinsics_all = self.intrinsics_all[valid_ids]
+        self.pose_all = self.pose_all[valid_ids]
+        self.n_images = len(valid_ids)
         if reverse_coordinate:
             self.normalization = torch.diag(torch.tensor([1,-1,-1,1])).float()
         else:

@@ -24,6 +24,7 @@ class SceneDataset(torch.utils.data.Dataset):
                  n_images=-1,
                  line_detector='hawp',
                  distance_threshold=5.0,
+                 sample_step = 10,
                  ):
 
         self.instance_dir = os.path.join(data_dir, '{0}'.format(scan_id))
@@ -45,7 +46,7 @@ class SceneDataset(torch.utils.data.Dataset):
         self.pose_all = []
         self.intrinsics_all = []
         image_paths = []
-        sample_step = 10
+        sample_step = sample_step
         assert len(pose_all) == len(image_paths_tmp)
         for i in range(n_images_tmp):
             if i % sample_step == 0:

@@ -153,7 +153,7 @@ def wireframe_recon(**kwargs):
     chunksize = kwargs['chunksize']
     data_path = kwargs['data']
 
-    lines3d_all = torch.tensor(np.load(data_path)['lines3d'])
+    # lines3d_all = torch.tensor(np.load(data_path)['lines3d'])
     for indices, model_input, ground_truth in tqdm(eval_dataloader):    
         mask = model_input['mask']
         model_input["intrinsics"] = model_input["intrinsics"].cuda()
@@ -168,28 +168,31 @@ def wireframe_recon(**kwargs):
         lines = model_input['lines'][0].cuda()
         labels = model_input['labels'][0]
 
-        randperm = torch.randperm(model_input['uv'].shape[1])[:5]
+        mask = mask.reshape(512,512)
+        rgb = ground_truth['rgb'][0].cpu().reshape(512,512,3)
+        plt.imshow()
+        # randperm = torch.randperm(model_input['uv'].shape[1])[:5]
 
-        rand_inp = {
-            'uv': model_input['uv'][:,randperm],
-            'uv_proj': model_input['uv_proj'][:,randperm],
-            'lines': model_input['lines'][:,randperm],
-            'pose': model_input['pose'],
-            'intrinsics': model_input['intrinsics'],
-            'labels': model_input['labels'],
-            'wireframe': model_input['wireframe']
-        }
-        out = model(rand_inp)
-        rays = out['points'][:,[0,-1]].detach().cpu()
+        # rand_inp = {
+        #     'uv': model_input['uv'][:,randperm],
+        #     'uv_proj': model_input['uv_proj'][:,randperm],
+        #     'lines': model_input['lines'][:,randperm],
+        #     'pose': model_input['pose'],
+        #     'intrinsics': model_input['intrinsics'],
+        #     'labels': model_input['labels'],
+        #     'wireframe': model_input['wireframe']
+        # }
+        # out = model(rand_inp)
+        # rays = out['points'][:,[0,-1]].detach().cpu()
 
-        rays_trimesh = [trimesh.load_path(ray) for ray in rays]
-        for i in len(rays_trimesh):
-            if i == 0:
-                rays_trimesh[i].colors = [[255,0,0,255]]
-            else:
-                rays_trimesh[i].colors = [[255,0,0,64]]
-        ray_points = trimesh.points.PointCloud(out['points'].reshape(-1,3).cpu())
-        scene = trimesh.load_path(lines3d_all)
+        # rays_trimesh = [trimesh.load_path(ray) for ray in rays]
+        # for i in len(rays_trimesh):
+        #     if i == 0:
+        #         rays_trimesh[i].colors = [[255,0,0,255]]
+        #     else:
+        #         rays_trimesh[i].colors = [[255,0,0,64]]
+        # ray_points = trimesh.points.PointCloud(out['points'].reshape(-1,3).cpu())
+        # scene = trimesh.load_path(lines3d_all)
         
 
         import pdb; pdb.set_trace()

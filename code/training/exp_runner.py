@@ -29,6 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', default=False, action='store_true')
     parser.add_argument('--seed', default=42, type = int, help = 'seed for random number generator')
     parser.add_argument('--wandb', default=False, action='store_true', help='enable wandb')
+    parser.add_argument('--gitexp', default=False, action='store_true', help='enable gitexp')
 
     opt = parser.parse_args()
 
@@ -56,7 +57,8 @@ if __name__ == '__main__':
                                     # do_vis=not opt.cancel_vis,
                                     do_vis = False,
                                     verbose = opt.verbose,
-                                    wandb = opt.wandb
+                                    wandb = opt.wandb,
+                                    gitexp = opt.gitexp
                                     )
 
     trainrunner.run()

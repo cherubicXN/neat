@@ -81,7 +81,6 @@ class VolSDFTrainRunner():
             self.expname = self.expname + '/{0}'.format(scan_id)
             self.conf.put('dataset.scan_id', scan_id)
 
-        self.repo =  git.Repo(search_parent_directories=True)
         if kwargs['is_continue'] and kwargs['timestamp'] == 'latest':
             if os.path.exists(os.path.join('../',kwargs['exps_folder_name'],self.expname)):
                 timestamps = os.listdir(os.path.join('../',kwargs['exps_folder_name'],self.expname))
@@ -128,9 +127,6 @@ class VolSDFTrainRunner():
         with open(os.path.join(self.expdir, self.timestamp, 'runconf.conf'), 'w') as f:
             f.write(HOCONConverter.convert(self.conf))
         
-        self.repo.index.add(os.path.abspath(os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
-        self.repo.index.commit('new experiment {0}'.format(self.expdir),committer= git.Actor(name='expbot',email='expbot'))
-        # os.system("""cp -r {0} "{1}" """.format(kwargs['conf'], os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
 
         if (not self.GPU_INDEX == 'ignore'):
             os.environ["CUDA_VISIBLE_DEVICES"] = '{0}'.format(self.GPU_INDEX)
@@ -245,7 +241,15 @@ class VolSDFTrainRunner():
         else:
             self.wandb = False
 
+        self.repo =  git.Repo(search_parent_directories=True) if kwargs['gitexp'] else None
+        if self.repo:
+            self.repo.index.add(os.path.abspath(os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
+            self.repo.index.commit('new experiment {0}'.format(self.expdir),committer= git.Actor(name='expbot',email='expbot'))
+
+
     def commit_log(self, msg='update log'):
+        if not self.repo:
+            return
         log_path = os.path.join(self.expdir,self.timestamp, 'train.log')
         self.repo.index.add(os.path.abspath(log_path))
         self.repo.index.commit(msg,committer= git.Actor(name='expbot',email='expbot'))

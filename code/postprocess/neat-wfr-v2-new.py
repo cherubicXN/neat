@@ -246,7 +246,6 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         if len(points3d)>0:
             points3d = torch.cat(points3d,dim=0)
             points3d = torch.cat([points3d,points3d])
-
         gt_lines = model_input['wireframe'][0].line_segments(0.01).cuda()[:,:-1]
 
         dis = torch.sum((lines2d[:,None]-gt_lines[None])**2,dim=-1)
@@ -438,7 +437,7 @@ def wireframe_recon(**kwargs):
             model, 
             eval_dataloader, 
             kwargs['chunksize'],
-            junc_match_threshold=0.02,
+            junc_match_threshold=kwargs['junc_match_threshold'],
             DEBUG=False, 
             line_dis_threshold = kwargs['distance'], 
             device='cuda',
@@ -478,6 +477,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite the existing results')
     parser.add_argument('--disable-junction-refine', default=False, action='store_true')
+    parser.add_argument('--junc_match_threshold', default=0.02, type=float, help='the 3D junction and line segment matching threshold. In our paper, we use 0.02 by default.')
     # parser.add_argument('--score-th', default=0.05, type=float, help='the score threshold of 2D line segments')
 
     opt = parser.parse_args()
@@ -497,5 +497,6 @@ if __name__ == '__main__':
         overwrite=opt.overwrite,
         ckdist = opt.ckdist,
         ckview = opt.ckview,
-        sdf_junction_refine=not opt.disable_junction_refine
+        sdf_junction_refine=not opt.disable_junction_refine,
+        junc_match_threshold = opt.junc_match_threshold,
     )

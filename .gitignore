@@ -5,3 +5,10 @@ data/*
 exps/*
 # add python cache
 **/__pycache__/*
+**/precompute-results/*
+**/neat-results/*
+
+*.so
+**/build/*
+*.obj
+*.mtl

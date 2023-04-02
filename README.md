@@ -1,6 +1,12 @@
-## NEAT: Neural Attraction Fields for 3D Wireframe Reconstruction
+## Volumetric Wireframe Parsing from Neural Attraction Fields
 
-### Authors: Nan Xue, Bin Tan, Gui-Song Xia, Tianfu Wu
+> Volumetric Wireframe Parsing from Neural Attraction Fields
+> Nan Xue, Bin Tan, Gui-Song Xia, Tianfu Wu
+> Preprint
+
+<!-- insert the teaser -->
+<img src='docs/teaser-neat.png'/>
+
 
 ## Experiments
   <table>

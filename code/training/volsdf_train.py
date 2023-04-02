@@ -299,7 +299,6 @@ class VolSDFTrainRunner():
 
             if epoch % self.checkpoint_freq == 0:
                 self.save_checkpoints(epoch)
-                self.commit_log('checkpoint at epoch {}'.format(epoch))
 
             if self.do_vis and epoch % self.plot_freq == 0:
                 self.model.eval()
@@ -399,6 +398,7 @@ class VolSDFTrainRunner():
                 self.train_dataset.change_sampling_idx(self.num_pixels)
                 self.scheduler.step()
 
+        self.commit_log('Training finished after {} epochs'.format(epoch))
         self.save_checkpoints(epoch)
 
     def get_plot_data(self, model_outputs, pose, rgb_gt):

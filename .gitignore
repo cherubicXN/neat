@@ -5,3 +5,4 @@ data/*
 exps/*
 # add python cache
 **/__pycache__/*
+precomputed-results/*

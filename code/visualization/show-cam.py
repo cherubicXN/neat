@@ -151,6 +151,112 @@ def create_junctions(junctions, radius=0.01):
         spheres+=obj
     return spheres
 
+import numpy as np
+import open3d as o3d
+from PIL import Image
+
+def create_textured_frustum(image_path, extrinsic, width, height, fx, fy, cx, cy):
+    image = Image.open(image_path)
+    image = np.asarray(image)
+    texture = o3d.geometry.Image(image)
+
+    # Create frustum vertices
+    near = 0.1
+    far = 5.0
+    aspect_ratio = float(width) / float(height)
+    frustum_vertices = np.array([
+        [cx * near / fx, cy * near / fy, near],
+        [(cx - width) * near / fx, cy * near / fy, near],
+        [cx * near / fx, (cy - height) * near / fy, near],
+        [(cx - width) * near / fx, (cy - height) * near / fy, near],
+        [cx * far / fx, cy * far / fy, far],
+        [(cx - width) * far / fx, cy * far / fy, far],
+        [cx * far / fx, (cy - height) * far / fy, far],
+        [(cx - width) * far / fx, (cy - height) * far / fy, far],
+    ])
+
+    # Create frustum faces
+    frustum_faces = np.array([
+        [0, 1, 2],
+        [1, 2, 3],
+        [4, 5, 6],
+        [5, 6, 7],
+        [0, 1, 4],
+        [1, 4, 5],
+        [2, 3, 6],
+        [3, 6, 7],
+        [0, 2, 4],
+        [2, 4, 6],
+        [1, 3, 5],
+        [3, 5, 7],
+    ])
+
+    # Create frustum texture coordinates
+    frustum_texture_coords = np.array([
+        [1, 1],
+        [0, 1],
+        [1, 0],
+        [0, 0],
+        [1, 1],
+        [0, 1],
+        [1, 0],
+        [0, 0],
+    ])
+
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(frustum_vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(frustum_faces)
+    mesh.triangle_uvs = o3d.utility.Vector2dVector(frustum_texture_coords)
+    mesh.textures = [texture]
+    mesh.transform(extrinsic)
+
+    return mesh
+
+def create_image_plane(image_path, extrinsic, width, height, fx, fy, cx, cy, depth):
+    image = Image.open(image_path)
+    image = np.asarray(image)
+    texture = o3d.geometry.Image(image)
+
+    w_ratio = float(width) / float(fx)
+    h_ratio = float(height) / float(fy)
+
+    plane_vertices = np.array([
+        # [cx * depth * w_ratio, cy * depth * h_ratio, depth],
+        # [(cx - width) * depth * w_ratio, cy * depth * h_ratio, depth],
+        # [cx * depth * w_ratio, (cy - height) * depth * h_ratio, depth],
+        # [(cx - width) * depth * w_ratio, (cy - height) * depth * h_ratio, depth],
+        [-0.1,-0.1,0.0],
+        [0.1,-0.1,0.0],
+        [0.1,0.1,0.0],
+        [-0.1,0.1,0.0],
+    ])
+
+    plane_faces = np.array([
+        [0, 1, 2],
+        [0, 2, 3],
+    ])
+
+    plane_texture_coords = np.array([
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1],
+    ])
+    normals = np.zeros(plane_vertices.shape)
+    normals[:,2] = 1
+
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(plane_vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(plane_faces)
+    mesh.triangle_uvs = o3d.utility.Vector2dVector(plane_texture_coords)
+    mesh.vertex_normals = o3d.utility.Vector3dVector(normals)
+    mesh.textures = [texture]
+    o3d.visualization.draw_geometries([mesh])
+    import pdb; pdb.set_trace()
+    mesh.transform(extrinsic)
+
+    return mesh
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -199,15 +305,18 @@ if __name__ == "__main__":
 
     poses = camera['extrinsics']
 
+    mesh = create_image_plane('../data/abc/00013166/images/image_0000.png',np.linalg.inv(poses[0]),512,512,K[0][0,0],K[0][1,1],K[0][0,2],K[0][1,2],0.001)
+    mesh += create_textured_frustum('../data/abc/00013166/images/image_0000.png',np.linalg.inv(poses[0]),512,512,K[0][0,0],K[0][1,1],K[0][0,2],K[0][1,2])
+    import pdb; pdb.set_trace()
     cam_objs = [o3d.geometry.LineSet.create_camera_visualization(512,512,Ki,np.linalg.inv(pi),0.1) for Ki,pi in zip(K,poses)]
     cam_obj_sum = cam_objs[0]
     for i in range(1,len(cam_objs)):
         cam_obj_sum += cam_objs[i]
 
     
-    o3d.io.write_line_set(os.path.join(opt.save,'lineset.ply'),lineset_obj)
-    o3d.io.write_line_set(os.path.join(opt.save,'cameras.ply'),cam_obj_sum)
-    o3d.io.write_triangle_mesh(os.path.join(opt.save,'junctions.ply'),junctions_obj)
+    # o3d.io.write_line_set(os.path.join(opt.save,'lineset.ply'),lineset_obj)
+    # o3d.io.write_line_set(os.path.join(opt.save,'cameras.ply'),cam_obj_sum)
+    # o3d.io.write_triangle_mesh(os.path.join(opt.save,'junctions.ply'),junctions_obj)
     # import pdb; pdb.set_trace()
 
     # o3d.visualization.draw_geometries([lineset_obj]+junctions_obj+cam_objs)

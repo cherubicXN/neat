@@ -275,26 +275,26 @@ class VolSDFTrainRunner():
     def run(self):
         print("training...")
 
-        if self.do_vis:
-            from utils.plots import get_3D_quiver_trace
-            import plotly.graph_objs as go
-            import plotly.offline as offline
-            data = []
-            for indices, model_input, ground_truth in self.plot_dataloader:
-                cam_loc, cam_dir = rend_util.get_camera_for_plot(model_input['pose'])
-                data.append(
-                    get_3D_quiver_trace(cam_loc, cam_dir,
-                    name='camera_{0}'.format(len(data)+1))
-                )
-            
-            fig = go.Figure(data=data)
-            scene_dict = dict(xaxis=dict(range=[-6, 6], autorange=False),
-                      yaxis=dict(range=[-6, 6], autorange=False),
-                      zaxis=dict(range=[-6, 6], autorange=False),
-                      aspectratio=dict(x=1, y=1, z=1))
-            fig.update_layout(scene=scene_dict, width=1200, height=1200, showlegend=True)
-            filename = '{0}/cameras.html'.format(self.plots_dir)
-            offline.plot(fig, filename=filename, auto_open=False)
+        # if self.do_vis:
+        from utils.plots import get_3D_quiver_trace
+        import plotly.graph_objs as go
+        import plotly.offline as offline
+        data = []
+        for indices, model_input, ground_truth in self.plot_dataloader:
+            cam_loc, cam_dir = rend_util.get_camera_for_plot(model_input['pose'])
+            data.append(
+                get_3D_quiver_trace(cam_loc, cam_dir,
+                name='camera_{0}'.format(len(data)+1))
+            )
+        
+        fig = go.Figure(data=data)
+        scene_dict = dict(xaxis=dict(range=[-6, 6], autorange=False),
+                  yaxis=dict(range=[-6, 6], autorange=False),
+                  zaxis=dict(range=[-6, 6], autorange=False),
+                  aspectratio=dict(x=1, y=1, z=1))
+        fig.update_layout(scene=scene_dict, width=1200, height=1200, showlegend=True)
+        filename = '{0}/cameras.html'.format(self.plots_dir)
+        offline.plot(fig, filename=filename, auto_open=False)
         for epoch in range(self.start_epoch, self.nepochs + 1):
 
             if epoch % self.checkpoint_freq == 0:

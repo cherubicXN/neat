@@ -50,7 +50,7 @@ class SceneDataset(torch.utils.data.Dataset):
             intrinsics, pose = rend_util.load_K_Rt_from_P(None, P)
             self.intrinsics_all.append(torch.from_numpy(intrinsics).float())
             self.pose_all.append(torch.from_numpy(pose).float())
-
+        import pdb; pdb.set_trace()
         self.rgb_images = []
         self.masks = []
         self.wireframes = []

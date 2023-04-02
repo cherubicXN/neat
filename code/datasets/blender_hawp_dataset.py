@@ -73,6 +73,7 @@ class BlenderDataset(torch.utils.data.Dataset):
         self.intrinsics_all = self.intrinsics_all[valid_ids]
         self.pose_all = self.pose_all[valid_ids]
         self.n_images = len(valid_ids)
+        
         if reverse_coordinate:
             self.normalization = torch.diag(torch.tensor([1,-1,-1,1])).float()
         else:

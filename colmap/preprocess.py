@@ -626,7 +626,8 @@ def example_usage():
         R = qvec2rotmat(image_data.qvec)
         T = image_data.tvec
         G = np.vstack([np.hstack([R, T.reshape(3,1)]),[0,0,0,1]])
-        extrinsics[image_data.name] = np.linalg.inv(G)
+        # extrinsics[image_data.name] = np.linalg.inv(G)
+        extrinsics[image_data.name] = G
 
     sorted_keys = sorted(extrinsics.keys())
 

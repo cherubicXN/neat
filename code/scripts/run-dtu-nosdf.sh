@@ -1,0 +1,10 @@
+python postprocess/neat-wfr-v2-new.py --conf ../exps/dtu-rend-d/18/2023_03_05_19_28_22/runconf.conf --disable-junction-refine
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/19/2023_03_06_11_08_41/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/21/2023_03_06_11_08_27/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/22/2023_03_06_18_46_24/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/23/2023_03_06_18_45_30/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/24/2023_02_23_10_37_49/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/37/2023_02_25_23_35_52/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/40/2023_02_26_21_36_08/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/65/2023_03_03_17_50_19/runconf.conf
+python postprocess/neat-wfr-v2-new.py --disable-junction-refine --conf ../exps/dtu-rend-d/105/2023_02_26_09_25_36/runconf.conf

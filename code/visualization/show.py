@@ -139,7 +139,7 @@ def linesToOpen3d(lines):
     return lineset
 
 def WireframeVisualizer(lines, 
-    render_dir = None, cam_dir = None, rx=0, ry=0,rz=0,t=0, points3d_all = None, show_endpoints = False, line_width=0.03, camera_path = None):
+    render_dir = None, cam_dir = None, rx=0, ry=0,rz=0,t=0, points3d_all = None, show_endpoints = False, show_lines = True, line_width=0.03, camera_path = None):
     lineset = linesToOpen3d(lines)
     import matplotlib.pyplot as plt
     from collections import deque
@@ -383,7 +383,9 @@ def WireframeVisualizer(lines,
         fig.add_axes(ax)
         plt.xlim([-0.5, width-0.5])
         plt.ylim([height-0.5, -0.5])
-        # plt.plot([lines2d[:,0,0],lines2d[:,1,0]],[lines2d[:,0,1],lines2d[:,1,1]],'-',color='black',linewidth=line_width)
+
+        if show_lines:
+            plt.plot([lines2d[:,0,0],lines2d[:,1,0]],[lines2d[:,0,1],lines2d[:,1,1]],'-',color='black',linewidth=line_width)
         if show_endpoints:
             plt.scatter(lines2d[:,0,0],lines2d[:,0,1],color='b',s=0.2,edgecolors='none',zorder=5)
             plt.scatter(lines2d[:,1,0],lines2d[:,1,1],color='b',s=0.2,edgecolors='none',zorder=5)
@@ -430,6 +432,7 @@ if __name__ == "__main__":
     parser.add_argument('--cams', default=None, type=str, help='the path of the camera poses')
     parser.add_argument('--pose', default=None, type=str, choices=['dtu','scan'])
     parser.add_argument('--show-points', default=False, action='store_true')
+    parser.add_argument('--hide-lines', default=True, action='store_false')
     parser.add_argument('--line-width', default=0.03, type=float)
     parser.add_argument('--name', default='video', type=str)
     
@@ -474,7 +477,7 @@ if __name__ == "__main__":
     
 
     print(lines3d.shape)
-    WireframeVisualizer(lines3d,opt.save, None, rx=rx,ry=ry,rz=rz,t=t, points3d_all=None, show_endpoints=opt.show_points,
+    WireframeVisualizer(lines3d,opt.save, None, rx=rx,ry=ry,rz=rz,t=t, points3d_all=None, show_endpoints=opt.show_points,show_lines=~opt.hide_lines,
     line_width=opt.line_width,
     camera_path=opt.cams)
 

@@ -68,8 +68,6 @@ if __name__ == "__main__":
     endpoints3d = endpoints3d.reshape(-1,2,3)
     mean_length = np.mean(np.linalg.norm(endpoints3d[:,0]-endpoints3d[:,1],axis=1))
     num_lines = lines3d.shape[0]
-    print('mean length: ', mean_length)
-    print('num lines: ', num_lines)
     # import pdb; pdb.set_trace()
     t = np.linspace(0, 1,32).reshape(1,-1,1)
 
@@ -128,7 +126,15 @@ if __name__ == "__main__":
     dist_s2d, idx_s2d = nn_engine.kneighbors(stl_above, n_neighbors=1, return_distance=True)
     mean_s2d = dist_s2d[dist_s2d < max_dist].mean()
 
-    print('ACC: {}\t COMP: {}'.format(mean_d2s, mean_s2d))
+    # print('ACC: {}\t COMP: {}'.format(mean_d2s, mean_s2d))
+    print("ACC", mean_d2s)
+    print("COMP", mean_s2d)
+    print('mean length: ', mean_length)
+    print('num lines: ', num_lines)
+    print(mean_d2s)
+    print(mean_s2d)
+    print(mean_length)
+    print(num_lines)
 
     # gt_pcd = o3d.io.read_point_cloud(opt.gtPcd)
     # gt_pcd.transform(np.linalg.inv(global_scale_mat))

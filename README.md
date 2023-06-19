@@ -9,7 +9,13 @@
 <!-- insert the teaser -->
 <img src='docs/teaser-neat.png'/>
 
-
+## Installation 
+### Pytorch 1.13.1 + CUDA 11.7 (Ubuntu 22.04 LTS)
+```bash
+conda create -n neat python=3.10
+pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+pip install gputil gitpython pyhocon tqdm matplotlib plotly opencv-python scikit-image trimesh
+```
 ## Experiments
   <table>
   <tr>

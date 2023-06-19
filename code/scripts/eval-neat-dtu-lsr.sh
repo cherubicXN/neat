@@ -28,3 +28,6 @@ python evaluation/eval-lsr-dtu.py \
 # #scan 23
 # python evaluation/eval-lsr-dtu.py --scan 23 --cam ../data/DTU/scan23/cameras.npz --data ../exps/dtu-rend-d/23/2023_03_06_18_45_30/wireframes/latest-H3In0MGp-wfi_checked.npz
 
+# scan65
+# python evaluation/eval-lsr-dtu.py --scan 65 --data ../exps/dtu-rend-d/65/2023_03_03_17_50_19/wireframes/latest-fISqRbu3-wfi_checked.npz
+

@@ -249,7 +249,6 @@ def initial_recon(model, eval_dataloader, chunksize, *,
         gt_lines = model_input['wireframe'][0].line_segments(0.01).cuda()[:,:-1]
 
         dis = torch.sum((lines2d[:,None]-gt_lines[None])**2,dim=-1)
-        # import pdb; pdb.set_trace()
 
         mindis, minidx = dis.min(dim=1)
 
@@ -339,6 +338,7 @@ def visibility_checking(lines3d_all, eval_dataloader, model, *,
     visibility = torch.zeros((lines3d_all.shape[0],),device=device)
     lines3d_visibility = torch.zeros((lines3d_all.shape[0],len(eval_dataloader)),device=device, dtype=torch.bool)
     duplicated_graph = torch.zeros((lines3d_all.shape[0],lines3d_all.shape[0]),device=device, dtype=torch.bool)
+    num_2d_junctions = []
     for indices, model_input, ground_truth in tqdm(eval_dataloader):    
         lines2d_gt = model_input['wireframe'][0].line_segments(0.05)
         mask = model_input['mask']
@@ -352,7 +352,8 @@ def visibility_checking(lines3d_all, eval_dataloader, model, *,
 
         lines2d_all = model.project2D(K,R,T,lines3d_all).reshape(-1,4)
         lines2d_gt = lines2d_gt.to(device=device)
-
+        num_2d_junctions.append(lines2d_gt[:,:-1].reshape(-1,2).unique(dim=0).shape[0])
+        
         
         dis1 = torch.sum((lines2d_all[:,None]-lines2d_gt[None,:,[0,1,2,3]])**2,dim=-1)
         dis2 = torch.sum((lines2d_all[:,None]-lines2d_gt[None,:,[2,3,0,1]])**2,dim=-1)

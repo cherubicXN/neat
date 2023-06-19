@@ -14,7 +14,7 @@ def plt_lines(lines,*args, **kwargs):
 
 
 class VolSDFLoss(nn.Module):
-    def __init__(self, rgb_loss, eikonal_weight, line_weight, junction_3d_weight = 0.1, junction_2d_weight = 0.01):
+    def __init__(self, rgb_loss, eikonal_weight, line_weight, junction_3d_weight = 0.1, junction_2d_weight = 0.01, depth_weight = 0.1):
         super().__init__()
         self.eikonal_weight = eikonal_weight
         self.line_weight = line_weight
@@ -22,6 +22,7 @@ class VolSDFLoss(nn.Module):
         self.steps = 0
         self.junction_3d_weight = junction_3d_weight
         self.junction_2d_weight = junction_2d_weight
+        self.depth_weight = depth_weight
 
     def get_rgb_loss(self,rgb_values, rgb_gt):
         rgb_gt = rgb_gt.reshape(-1, 3)
@@ -87,7 +88,7 @@ class VolSDFLoss(nn.Module):
 
         depth_loss = self.get_depth_loss(model_outputs['depth'], ground_truth['depth_colmap'].cuda())
         loss = rgb_loss + \
-            depth_loss + \
+            self.depth_weight*depth_loss + \
             self.eikonal_weight * eikonal_loss + \
             self.line_weight*lines2d_loss 
             # self.junction_3d_weight*loss_j3d + \
@@ -95,6 +96,7 @@ class VolSDFLoss(nn.Module):
         output = {
             'loss': loss,
             # 'cls_loss': loss_cls,
+            'depth_loss': depth_loss,
             'rgb_loss': rgb_loss,
             'eikonal_loss': eikonal_loss,
             'line_loss': lines2d_loss,

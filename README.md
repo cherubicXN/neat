@@ -2,7 +2,7 @@
 
 > Volumetric Wireframe Parsing from Neural Attraction Fields
 > 
-> Nan Xue, Bin Tan, Gui-Song Xia, Tianfu Wu
+> Nan Xue, Bin Tan, Yuxi Xiao, Liang Dong, Gui-Song Xia, Tianfu Wu
 > 
 > Preprint
 

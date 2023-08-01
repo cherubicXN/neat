@@ -1,0 +1,3 @@
+[submodule "third-party/hawp"]
+	path = third-party/hawp
+	url = https://github.com/cherubicXN/hawp.git

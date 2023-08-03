@@ -7,8 +7,8 @@ import cv2
 import utils.general as utils
 from utils import rend_util
 # from utils import hawp_util
-from sslib import WireframeGraph
-from hawp import _C
+from .utils.wireframe import WireframeGraph
+from hawp.base import _C
 from pathlib import Path
 
 def _normalize(inp):

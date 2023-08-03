@@ -91,7 +91,8 @@ class UniformSampler(RaySampler):
         idx = torch.randint(z_vals.shape[-1], (z_vals.shape[0],)).cuda()
         z_samples_eik = torch.gather(z_vals, 1, idx.unsqueeze(-1))
         
-        return z_vals, z_samples_eik
+        # return z_vals, z_samples_eik
+        return z_vals
     
     def get_z_vals_fine(self, z_vals, weights, model):
         assert self.N_important > 0

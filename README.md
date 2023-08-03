@@ -18,9 +18,9 @@ git clone https://github.com/cherubicXN/neat.git --recursive
 ```bash
 conda create -n neat python=3.10
 pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
-pip install gputil gitpython pyhocon tqdm matplotlib plotly opencv-python scikit-image trimesh
+pip install gputil gitpython pyhocon tqdm matplotlib plotly opencv-python scikit-image trimesh open3d 
+pip install 'pyglet<2'
 ```
 
-## Data Preparation
-### DTU dataset
-### BlendedMVS dataset
+## A toy example on a simple object from the [ABC](https://deep-geometry.github.io/abc-dataset/) dataset.
+

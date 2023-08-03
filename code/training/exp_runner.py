@@ -8,6 +8,12 @@ import random
 import numpy as np 
 
 from training.volsdf_train import VolSDFTrainRunner
+
+# import open3d as o3d 
+# from open3d.visualization.tensorboard_plugin import summary
+# from open3d.visualization.tensorboard_plugin.util import to_dict_batch
+# from torch.utils.tensorboard import SummaryWriter
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -28,8 +34,8 @@ if __name__ == '__main__':
                         help='If set, cancel visualization in intermediate epochs.')
     parser.add_argument('--verbose', default=False, action='store_true')
     parser.add_argument('--seed', default=42, type = int, help = 'seed for random number generator')
-    parser.add_argument('--wandb', default=False, action='store_true', help='enable wandb')
     parser.add_argument('--gitexp', default=False, action='store_true', help='enable gitexp')
+    parser.add_argument('--tbvis', default=False, action='store_true', help='enable tensorboard visualization')
 
     opt = parser.parse_args()
 
@@ -57,8 +63,8 @@ if __name__ == '__main__':
                                     # do_vis=not opt.cancel_vis,
                                     do_vis = False,
                                     verbose = opt.verbose,
-                                    wandb = opt.wandb,
-                                    gitexp = opt.gitexp
+                                    gitexp = opt.gitexp,
+                                    use_tb = opt.tbvis
                                     )
 
     trainrunner.run()

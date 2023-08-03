@@ -13,12 +13,11 @@ from utils import rend_util
 from collections import defaultdict
 import logging
 import json
-try:
-    import wandb
-    WANDB_AVAILABLE = True
-except:
-    WANDB_AVAILABLE = False
-    pass
+
+import open3d as o3d 
+from open3d.visualization.tensorboard_plugin import summary
+from open3d.visualization.tensorboard_plugin.util import to_dict_batch
+from torch.utils.tensorboard import SummaryWriter
 
 # backward hook with module name
 def get_backward_hook(module_name: str):
@@ -229,22 +228,15 @@ class VolSDFTrainRunner():
         logger.addHandler(fh)
         self.logger = logger
         self.log_freq = 1 if kwargs['verbose'] else len(self.train_dataloader)
-        if kwargs['wandb'] and WANDB_AVAILABLE:
-            wandb.init(project="NEAT", 
-                name='{}/{}/{}'.format(
-                    self.conf.train.expname,
-                    scan_id,
-                    self.timestamp),
-                config=self.conf.as_plain_ordered_dict(), 
-                dir=self.expdir)
-            self.wandb = True
-        else:
-            self.wandb = False
 
         self.repo =  git.Repo(search_parent_directories=True) if kwargs['gitexp'] else None
         if self.repo:
             self.repo.index.add(os.path.abspath(os.path.join(self.expdir, self.timestamp, 'runconf.conf')))
             self.repo.index.commit('new experiment {0}'.format(self.expdir),committer= git.Actor(name='expbot',email='expbot'))
+
+        if kwargs['use_tb']:
+            self.tb_writer = SummaryWriter(os.path.join(self.expdir, self.timestamp, 'logs'))
+            self.tb_logdir = os.path.join(self.expdir, self.timestamp, 'logs')
 
 
     def commit_log(self, msg='update log'):
@@ -341,8 +333,21 @@ class VolSDFTrainRunner():
             if hasattr(self.model, 'latents'):
                 with torch.no_grad():
                     global_junctions = self.model.ffn(self.model.latents).cpu()
+                    o3d_obj = o3d.geometry.PointCloud(
+                        o3d.utility.Vector3dVector(global_junctions.cpu().numpy())
+                    )
+
                 torch.save(global_junctions, os.path.join(self.junctions_path, str(epoch) + '.pth'))
-                
+
+                self.tb_writer.add_3d('junctions3d',
+                    to_dict_batch([o3d_obj]),
+                    step=epoch)
+                # with self.tb_writer.as_default():
+                #     summary.add_3d('junctions', 
+                #         to_dict_batch([o3d.utility.Vector3dVector(global_junctions.cpu().numpy())]),
+                #         step=epoch,
+                #         logger=self.tb_logdir
+                #         )
 
             self.train_dataset.change_sampling_idx(self.num_pixels)
 
@@ -394,10 +399,6 @@ class VolSDFTrainRunner():
                         psnr.item(),
                                 loss_meters()['psnr'].item(),
                                 ))
-                    if self.wandb and self.log_freq==1:
-                        wandb.log(loss_meters(), step=epoch*self.n_batches + data_index)
-                    elif self.wandb:
-                        wandb.log(loss_meters(), step=epoch)
 
                 self.train_dataset.change_sampling_idx(self.num_pixels)
                 self.scheduler.step()

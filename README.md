@@ -10,128 +10,17 @@
 <img src='docs/teaser-neat.png'/>
 
 ## Installation 
+### Cloning the Repository
+```
+git clone https://github.com/cherubicXN/neat.git --recursive
+```
 ### Pytorch 1.13.1 + CUDA 11.7 (Ubuntu 22.04 LTS)
 ```bash
 conda create -n neat python=3.10
 pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
 pip install gputil gitpython pyhocon tqdm matplotlib plotly opencv-python scikit-image trimesh
 ```
-## Experiments
-  <table>
-  <tr>
-    <th colspan=5>
-      <img src="exps/abc_000075213_neat/2023_02_17_09_50_32/wireframes/2000-wfi_record.gif" width="512" />
-    </th>
-  </tr>
-  <tr>
-        <th>ABC-000075213</th><th colspan="4">exps/abc_000075213_neat/2023_02_17_09_50_32</th>
-    </tr>
-  </table>
-  <table>
-    <tr>
-        <th colspan="5">
-          <img src="exps/dtu-rend-d/24/2023_02_23_10_37_49/wireframes/latest-wfi_checked_record.gif" width="512" />
-        </th>
-    </tr>
-    <tr>
-        <th>DTU-24</th><th colspan="4">exps/dtu-rend-d/24/2023_02_23_10_37_49</th>
-    </tr>
-    <tr>
-      <th>Name of experiments</th>
-      <th>ACC</th>
-      <th>COMP</th>
-      <th>ACC (Junctions)</th>
-      <th>COMP (Junctions)</th>
-    </tr>
-    <tr>
-    <td>2000-wfi_checked</td>
-    <td><b>0.4279</b></td>
-    <td>6.7207</td>
-    <td rowspan="2"> <b>0.5525</b> </td>
-    <td rowspan="2"> <b>8.5480</b> </td>
-    </tr>
-    <tr>
-    <td>2000-wfi</td>
-    <td>0.6737</td>
-    <td>5.1101</td>
-    </tr>
-    <tr>
-    <td>2000-wfr</td>
-    <td>0.7069</td>
-    <td>5.1203</td>
-    <td rowspan="2"> 0.6549 </td>
-    <td rowspan="2"> 8.6102 </td>
-    </tr>
-    <tr>
-    <td>2000-wfr_checked</td>
-    <td>0.5461</td>
-    <td>7.0043</td>
-    </tr>
-  </table>
-  <table>
-    <tr>
-        <th colspan="5">
-          <img src="exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23/wireframes/2000-wfi_checked_record.gif" width="512" />
-        </th>
-    </tr>
-    <tr>
-        <th>DTU-24</th><th colspan="4">exps/dtu-wfr-v1-med/24/2023_02_07_21_26_23</th>
-    </tr>
-    <tr>
-      <th>Name of experiments</th>
-      <th>ACC</th>
-      <th>COMP</th>
-      <th>ACC (Junctions)</th>
-      <th>COMP (Junctions)</th>
-    </tr>
-    <tr>
-    <td>2000-wfi_checked</td>
-    <td><b>0.4736</b></td>
-    <td>6.6234</td>
-    <td rowspan="2"> <b>0.6892</b> </td>
-    <td rowspan="2"> <b>8.4224</b> </td>
-    </tr>
-    <tr>
-    <td>2000-wfi</td>
-    <td>0.7476</td>
-    <td>5.7579</td>
-    </tr>
-    <tr>
-    <td>2000-wfr</td>
-    <td>0.7820</td>
-    <td>5.8845</td>
-    <td rowspan="2"> 0.8668 </td>
-    <td rowspan="2"> 8.8199 </td>
-    </tr>
-    <tr>
-    <td>2000-wfr_checked</td>
-    <td>0.5461</td>
-    <td>7.0043</td>
-    </tr>
-  </table>
 
-## Installation
-
-1. Go to the directory ``code``, and build the _C by
-   ```dotnetcli
-   python setup.py build_ext --inplace
-   ```
-## Changelogs
-- v0.0 ([4cef0e6d9545bdca00b22b47892aa952ec1b23b3](https://github.com/cherubicXN/neat/tree/4cef0e6d9545bdca00b22b47892aa952ec1b23b3))
-  - Initially build the wireframe reconstruction pipeline 
-    - It is amazing because we can learn the global junctions (and latents) via backpropogation
-    - Huganrian Matching is extensively used to make connections between line segments and global junctions (latents)
-    - Works well on DTU dataset with great generalization ability across scenes
-    - dbscan is used for online clustering
-  - confs
-    - https://github.com/cherubicXN/neat/blob/13f12085a042f742e572f6421fe80363305bf8f2/code/confs/dtu-wfr.conf
-    - https://github.com/cherubicXN/neat/blob/13f12085a042f742e572f6421fe80363305bf8f2/code/confs/bmvs-wfr.conf
-
-- v0.1 (inprogress)
-  - [x] Checking if the online clustering is necessary (dtu-wfr-v1.conf)
-  - [x] Support wandb
-- Plan
-  - [ ] Checking if the online clustering is necessary
-  - [ ] Using junctions for SDF and NEAT field learning
-  - [ ] Other scenes (e.g., LLFF, Apple's dataset)
-  - [x] Query 3D lines
+## Data Preparation
+### DTU dataset
+### BlendedMVS dataset

@@ -93,7 +93,7 @@ class UniformSampler(RaySampler):
         
         # return z_vals, z_samples_eik
         return z_vals
-    
+
     def get_z_vals_fine(self, z_vals, weights, model):
         assert self.N_important > 0
 

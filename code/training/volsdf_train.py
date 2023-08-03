@@ -13,7 +13,6 @@ from utils import rend_util
 from collections import defaultdict
 import logging
 import json
-
 import open3d as o3d 
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
@@ -238,7 +237,6 @@ class VolSDFTrainRunner():
             self.tb_writer = SummaryWriter(os.path.join(self.expdir, self.timestamp, 'logs'))
             self.tb_logdir = os.path.join(self.expdir, self.timestamp, 'logs')
 
-
     def commit_log(self, msg='update log'):
         if not self.repo:
             return
@@ -342,12 +340,6 @@ class VolSDFTrainRunner():
                 self.tb_writer.add_3d('junctions3d',
                     to_dict_batch([o3d_obj]),
                     step=epoch)
-                # with self.tb_writer.as_default():
-                #     summary.add_3d('junctions', 
-                #         to_dict_batch([o3d.utility.Vector3dVector(global_junctions.cpu().numpy())]),
-                #         step=epoch,
-                #         logger=self.tb_logdir
-                #         )
 
             self.train_dataset.change_sampling_idx(self.num_pixels)
 

@@ -9,11 +9,6 @@ import numpy as np
 
 from training.volsdf_train import VolSDFTrainRunner
 
-# import open3d as o3d 
-# from open3d.visualization.tensorboard_plugin import summary
-# from open3d.visualization.tensorboard_plugin.util import to_dict_batch
-# from torch.utils.tensorboard import SummaryWriter
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()

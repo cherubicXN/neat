@@ -35,4 +35,6 @@ pip install 'pyglet<2'
 ```
 
 ## A toy example on a simple object from the [ABC](https://deep-geometry.github.io/abc-dataset/) dataset.
-
+```
+python training/exp_runner.py --conf confs/iccv-submission/abc-debug/abc-neat-a.conf --nepoch 2000 --tbvis
+```

@@ -40,7 +40,8 @@ pip install -r requirements.txt
 
 ## A toy example on a simple object from the [ABC](https://deep-geometry.github.io/abc-dataset/) dataset
 <p align="center">
-<img src="data/abc/00075213/images/image_0000.png" alt="drawing" width="80"/><img src="data/abc/00075213/images/image_0010.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0000.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0010.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0020.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0030.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0040.png" alt="drawing" width="80"/>

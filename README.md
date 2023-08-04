@@ -4,13 +4,38 @@
 > 
 > Nan Xue, Bin Tan, Yuxi Xiao, Liang Dong, Gui-Song Xia, Tianfu Wu
 > 
+> 2023
+>
 > [Preprint](https://arxiv.org/abs/2307.10206) / [Code](https://github.com/cherubicXN/neat)
 >
-> 2023
+> <img src='docs/teaser-neat.png'/>
+>
 
-<!-- insert the teaser -->
-<img src='docs/teaser-neat.png'/>
+## Results on the DTU dataset
+<
+<p align="center">
+    <img src="figures/dtu/16-neat-16-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/17-neat-17-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/18-neat-18-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/19-neat-19-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/21-neat-21-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/22-neat-22-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/23-neat-23-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/24-neat-24-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/37-neat-37-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/40-neat-40-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/65-neat-65-wf.gif" alt="drawing" width="128">
+    <img src="figures/dtu/105-neat-105-wf.gif" alt="drawing" width="128">
+</p>
 
+## Results on the BlendedMVS dataset
+<p align="center">
+    <img src="figures/bmvs/neat-9.gif" alt="drawing" width="128"/>
+    <img src="figures/bmvs/neat-11.gif" alt="drawing" width="128"/>
+    <img src="figures/bmvs/neat-13.gif" alt="drawing" width="128"/>
+    <img src="figures/bmvs/neat-14.gif" alt="drawing" width="128"/>
+    <img src="figures/bmvs/neat-15.gif" alt="drawing" width="128"/>
+</p>
 ## Installation 
 ### Cloning the Repository
 ```

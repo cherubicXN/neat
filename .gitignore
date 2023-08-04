@@ -12,3 +12,4 @@ exps/*
 **/build/*
 *.obj
 *.mtl
+**/.vscode/*

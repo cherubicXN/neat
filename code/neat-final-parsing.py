@@ -185,21 +185,7 @@ def initial_recon(model, eval_dataloader, chunksize, *,
     else:
         is_valid = torch.ones_like(global_junctions[:,0], dtype=torch.bool)
     
-    # dist = torch.eye(global_junctions.shape[0], device=global_junctions.device) + torch.norm(global_junctions[:,None]-global_junctions[None],dim=-1)
-    # is_valid = torch.ones_like(is_valid, dtype=torch.bool)
-    # for i in range(global_junctions.shape[0]):
-    #     if is_valid[i] == 0:
-    #         continue
-    #     if dist[i].min()<=0.02:
-    #         idx = (dist[i]<=0.02).nonzero().flatten()
-    #         is_valid[idx] = 0
-    
-    # global_junctions = global_junctions[is_valid]
-    
-
     gjc_dict = defaultdict(list)
-    # eval_dataloader.dataset.wireframes
-    # trimesh.points.PointCloud(global_junctions[is_valid].cpu().numpy()).show()
     graph = torch.zeros((global_junctions.shape[0], global_junctions.shape[0]), device=global_junctions.device)
     for indices, model_input, ground_truth in tqdm(eval_dataloader):
         if DEBUG and indices.item()>5:
@@ -284,22 +270,15 @@ def initial_recon(model, eval_dataloader, chunksize, *,
                 if cdist[ai,aj]<junc_match_threshold:
                     gjc_dict[ai].append(endpoints[aj])
             
-        # weight = torch.where(dis<100,torch.exp(-dis),torch.zeros_like(-dis))
-        # weight = torch.nn.functional.normalize(weight,p=1,dim=0)
             points3d_all.append(points3d.cpu())
             lines3d_all.append(lines3d.cpu())
             scores_all.append(scores.cpu())
             print(len(gjc_dict.keys()),'<--',sum(l.shape[0] for l in lines3d_all))
-            # graph_, lines3d_ajd = get_wireframe_from_lines_and_junctions(lines3d, global_junctions, rel_matching_distance_threshold=0.3)
-            # graph += graph_
-            
-            # trimesh.load_path(global_junctions[graph.triu().nonzero()].cpu()).show()
-            # import pdb; pdb.set_trace()
 
     
     lines3d_all = torch.cat(lines3d_all,dim=0)
     scores_all = torch.cat(scores_all,dim=0)
-    lines3d_all = lines3d_all[scores_all<0.01]
+    lines3d_all = lines3d_all[scores_all<line_score_threshold]
 
     for key in gjc_dict.keys():
         gjc_dict[key] = torch.stack(gjc_dict[key],dim=0)
@@ -311,23 +290,14 @@ def initial_recon(model, eval_dataloader, chunksize, *,
                 key_list.append(k)
         return torch.tensor(key_list)
 
-    # jlist = junction_dict_to_keys(gjc_dict, threshold=5)
-    # _, temp = get_wireframe_from_lines_and_junctions(lines3d_all, global_junctions[jlist], rel_matching_distance_threshold=0.3)
-    # import pdb; pdb.set_trace()
-    junctions3d_initial = torch.stack([global_junctions[k] for k,v in gjc_dict.items() if v.shape[0]>1])
-    junctions3d_refined = torch.stack([v.mean(dim=0) for v in gjc_dict.values() if v.shape[0]>1])
-
+    junctions3d_initial = torch.stack([global_junctions[k] for k,v in gjc_dict.items() if v.shape[0]>1]) #TODO check if the voting threshold should be added as a parameter
     graph_initial, lines3d_wfi = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_initial.cuda(), rel_matching_distance_threshold=0)
-    graph_refined, lines3d_wfr = get_wireframe_from_lines_and_junctions(lines3d_all.cuda(), junctions3d_refined.cuda(), rel_matching_distance_threshold=0)
 
     result_dict = {
         'junctions3d_initial': junctions3d_initial,
-        'junctions3d_refined': junctions3d_refined,
         'lines3d_all': lines3d_all,
         'graph_initial': graph_initial,
-        'graph_refined': graph_refined,
         'lines3d_wfi': lines3d_wfi,
-        'lines3d_wfr': lines3d_wfr,
     }
     return result_dict
 
@@ -424,16 +394,11 @@ def wireframe_recon(**kwargs):
     line_path = os.path.join(wireframe_dir,'{}-wfr.npz'.format(out_basename))
     pth_path = os.path.join(wireframe_dir,'{}-neat.pth'.format(out_basename))
 
-    if os.path.exists(pth_path):
+    if os.path.exists(pth_path) and not kwargs['overwrite']:
         initial_recon_results = torch.load(pth_path)
 
         loaded_kwargs = initial_recon_results.get('kwargs',{})
     else:
-        # loaded_kwargs = {}
-    
-
-    
-    # if loaded_kwargs != kwargs:
         initial_recon_results = initial_recon(
             model, 
             eval_dataloader, 
@@ -449,14 +414,12 @@ def wireframe_recon(**kwargs):
 
     # 5 views for dtu24
     lines3d_wfi_checked = visibility_checking(initial_recon_results['lines3d_wfi'], eval_dataloader, model, mindis_th = kwargs['ckdist'], min_visible_views=kwargs['ckview'])
-    lines3d_wfr_checked = visibility_checking(initial_recon_results['lines3d_wfr'], eval_dataloader, model, mindis_th = kwargs['ckdist'], min_visible_views=kwargs['ckview'])
     initial_recon_results['lines3d_wfi_checked'] = lines3d_wfi_checked
-    initial_recon_results['lines3d_wfr_checked'] = lines3d_wfr_checked
 
     basename = os.path.join(wireframe_dir,'{}-{}.npz'.format(out_basename,'{}'))
 
 
-    for key in ['all','wfi', 'wfr', 'wfi_checked', 'wfr_checked']:
+    for key in ['all','wfi', 'wfi_checked']:
         np.savez(basename.format(key), lines3d=initial_recon_results['lines3d_{}'.format(key)].cpu().numpy())
         print('python evaluation/show.py --data {}'.format(basename.format(key)))
 
@@ -478,8 +441,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite the existing results')
     parser.add_argument('--disable-junction-refine', default=False, action='store_true')
-    parser.add_argument('--junc_match_threshold', default=0.02, type=float, help='the 3D junction and line segment matching threshold. In our paper, we use 0.02 by default.')
-    # parser.add_argument('--score-th', default=0.05, type=float, help='the score threshold of 2D line segments')
+    parser.add_argument('--junc_match_threshold', default=0.02, type=float, 
+        help='the 3D junction and line segment matching threshold. In our paper, we use 0.02 by default.')
 
     opt = parser.parse_args()
 

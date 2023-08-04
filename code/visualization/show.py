@@ -139,7 +139,16 @@ def linesToOpen3d(lines):
     return lineset
 
 def WireframeVisualizer(lines, 
-    render_dir = None, cam_dir = None, rx=0, ry=0,rz=0,t=0, points3d_all = None, show_endpoints = False, show_lines = True, line_width=0.03, camera_path = None):
+        render_dir = None, 
+        cam_dir = None, 
+        rx=0, ry=0,rz=0,t=0, 
+        points3d_all = None, 
+        show_endpoints = False, 
+        show_lines = True, 
+        line_width=0.03, 
+        camera_path = None,
+        **kwargs
+    ):
     lineset = linesToOpen3d(lines)
     import matplotlib.pyplot as plt
     from collections import deque
@@ -312,7 +321,7 @@ def WireframeVisualizer(lines,
     mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(
     size=0.6, origin=[0,0,0])
     vis = WireframeVisualizer.vis
-    vis.create_window(height=512,width=512, left=0, top=0, visible=True, window_name='Wireframe Visualizer')
+    vis.create_window(height=kwargs.get('height',1024),width=kwargs.get('width',1024), left=0, top=0, visible=True, window_name='Wireframe Visualizer')
     # vis.create_window()
     render_option = vis.get_render_option()
     vis.add_geometry(lineset)
@@ -346,7 +355,7 @@ def WireframeVisualizer(lines,
         
     vis = o3d.visualization.VisualizerWithKeyCallback()
     # vis.create_window()
-    vis.create_window(height=512,width=512, left=0, top=0, visible=True, window_name='Wireframe Visualizer')
+    vis.create_window(height=kwargs.get('height',1024),width=kwargs.get('width',1024), left=0, top=0, visible=True, window_name='Wireframe Visualizer')
     render_option = vis.get_render_option()
     vis.add_geometry(lineset)
     
@@ -435,6 +444,8 @@ if __name__ == "__main__":
     parser.add_argument('--hide-lines', default=True, action='store_false')
     parser.add_argument('--line-width', default=0.03, type=float)
     parser.add_argument('--name', default='video', type=str)
+    parser.add_argument('--width', default=1024, type=int)
+    parser.add_argument('--height', default=1024, type=int)
     
 
     opt = parser.parse_args()
@@ -469,17 +480,15 @@ if __name__ == "__main__":
     if len(lines3d.shape) == 1:
         lines3d = np.concatenate(lines3d,axis=0)
 
-    # if opt.show_points and 'points3d_all' in data:
-    #     points3d = np.concatenate(data['points3d_all'])
-    # el       points3d = None
-        # else:
-            
+
     
 
     print(lines3d.shape)
     WireframeVisualizer(lines3d,opt.save, None, rx=rx,ry=ry,rz=rz,t=t, points3d_all=None, show_endpoints=opt.show_points,show_lines=~opt.hide_lines,
     line_width=opt.line_width,
-    camera_path=opt.cams)
+    camera_path=opt.cams,
+    width=opt.width,
+    height=opt.height,)
 
     # opt = visualizer
 

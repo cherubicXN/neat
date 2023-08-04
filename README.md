@@ -34,6 +34,8 @@ pip install gputil gitpython pyhocon tqdm matplotlib plotly opencv-python scikit
 pip install 'pyglet<2'
 ```
 
+#### 4. Run the experiments under the directory of ``code``
+
 ## A toy example on a simple object from the [ABC](https://deep-geometry.github.io/abc-dataset/) dataset
 <img src="data/abc/00075213/images/image_0000.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0010.png" alt="drawing" width="80"/>
@@ -45,10 +47,45 @@ pip install 'pyglet<2'
 <img src="data/abc/00075213/images/image_0080.png" alt="drawing" width="80"/>
 
  
-Please run the following command line to run the toy example for
+- Step 1: Training or Optimization
+    ```
+    python training/exp_runner.py \
+        --conf confs/abc-debug/abc-neat-a.conf \
+        --nepoch 2000 \ # Number of epochs for training/optimization
+        --tbvis # Use tensorboard to visualize the 3D junctions
+    ```
+- Step 2: Finalize the NEAT wireframe model
+    ```
+    python neat-final-parsing.py --conf ../exps/abc-neat-a/{timestamp}/runconf.conf --checkpoint 1000
+    ```
+- Step 3: Visualize the 3D wireframe model by
+    ```
+    python
+    ```
+    - Currently, the visualization script only supports the local run.
+    - The open3d (v0.17) plugin for tensorboard is slow
+
+
+
+
+
+## Citations
+If you find our work useful in your research, please consider citing
 ```
-python training/exp_runner.py \
-    --conf confs/abc-debug/abc-neat-a.conf \
-    --nepoch 2000 \ # Number of epochs for training/optimization
-    --tbvis # Use tensorboard to visualize the 3D junctions
+@article{NEAT-arxiv,
+  author       = {Nan Xue and
+                  Bin Tan and
+                  Yuxi Xiao and
+                  Liang Dong and
+                  Gui{-}Song Xia and
+                  Tianfu Wu},
+  title        = {Volumetric Wireframe Parsing from Neural Attraction Fields},
+  journal      = {CoRR},
+  volume       = {abs/2307.10206},
+  year         = {2023},
+  url          = {https://doi.org/10.48550/arXiv.2307.10206},
+  doi          = {10.48550/arXiv.2307.10206},
+  eprinttype    = {arXiv},
+  eprint       = {2307.10206}
+}
 ```

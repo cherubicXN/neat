@@ -58,9 +58,17 @@ pip install 'pyglet<2'
     ```
     python neat-final-parsing.py --conf ../exps/abc-neat-a/{timestamp}/runconf.conf --checkpoint 1000
     ```
+    After running the above command line, you will get 4 files at ``../exps/abc-neat-a/{timestamp}/wireframes`` with the prefix of ``{epoch}-{hash}*``, where ``{epoch}`` is the checkpoint you evaluated and ``{hash}`` is an hash of hyperparameters for finalization. 
+
+    The four files are with the different suffix strings:
+    - ``{epoch}-{hash}-all.npz`` stores the all line segments from the NEAT field,
+    - ``{epoch}-{hash}-wfi.npz`` stores the initial wireframe model without visibility checking, containing some artifacts in terms of the wireframe edges,
+    - ``{epoch}-{hash}-wfi_checked.npz`` stores the wireframe model after visibility checking to reduce the edge artifacts,
+    - ``{epoch}-{hash}-neat.pth`` stores the above three files and some other information in the ``pth`` format.
+
 - Step 3: Visualize the 3D wireframe model by
     ```
-    python
+    python visualization/show.py --data ../exps/abc-neat-a/{timestamp}/wireframe/{filename}.npz
     ```
     - Currently, the visualization script only supports the local run.
     - The open3d (v0.17) plugin for tensorboard is slow

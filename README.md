@@ -129,3 +129,12 @@ If you find our work useful in your research, please consider citing
   eprint       = {2307.10206}
 }
 ```
+
+## Acknowledgement
+This project is built on [volsdf](https://github.com/lioryariv/volsdf). We also thank the four anonymous reviewers for their feedback for paper writing, listed as follow:
+- *"The proposed method is novel and very interesting and the authors' rebuttal address some of my concerns. However, as pointed out by other reviewers, many parts need to be revised to clarify the proposed method, and another careful review is necessary after the revisions. Therefore, my final rating is Borderline Reject."* by Reviewer 2
+- *"Despite my experience of over ten years in the field of 3D vision, I found it challenging to follow the submission, which is its main weakness."* by Reviewer 3
+- *"As pointed out by all the reviewers, the paper needs significant rework on writing. Even after reading the authors' feedback, some key details are still lacking or confusing.
+I do not think the paper in its current form is ready for publication, even adding the explanation provided in the authors' response."* by Reviewer 4
+- *"After reading rebuttals and other reviews, I think this paper is not ready to be published as its writing need significant revisions. The overall idea nad method is novel and interesting, while the current draft has too many unclear points and I sincerely believe this paper could be hugely improved by revision."* by Reviewer 5
+

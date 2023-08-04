@@ -34,7 +34,21 @@ pip install gputil gitpython pyhocon tqdm matplotlib plotly opencv-python scikit
 pip install 'pyglet<2'
 ```
 
-## A toy example on a simple object from the [ABC](https://deep-geometry.github.io/abc-dataset/) dataset.
+## A toy example on a simple object from the [ABC](https://deep-geometry.github.io/abc-dataset/) dataset
+<img src="data/abc/00075213/images/image_0000.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0010.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0020.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0030.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0040.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0050.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0060.png" alt="drawing" width="80"/>
+<img src="data/abc/00075213/images/image_0080.png" alt="drawing" width="80"/>
+
+ 
+Please run the following command line to run the toy example for
 ```
-python training/exp_runner.py --conf confs/iccv-submission/abc-debug/abc-neat-a.conf --nepoch 2000 --tbvis
+python training/exp_runner.py \
+    --conf confs/abc-debug/abc-neat-a.conf \
+    --nepoch 2000 \ # Number of epochs for training/optimization
+    --tbvis # Use tensorboard to visualize the 3D junctions
 ```

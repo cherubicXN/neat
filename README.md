@@ -6,7 +6,7 @@
 > 
 > 2023
 >
-> [Preprint](https://arxiv.org/abs/2307.10206) / [Code](https://github.com/cherubicXN/neat)
+> [Preprint](https://arxiv.org/abs/2307.10206) / [Code](https://github.com/cherubicXN/neat) / [Video](https://youtu.be/qtBQYbOpVpc)
 >
 > <img src='docs/teaser-neat.png'/>
 >
@@ -46,7 +46,7 @@ conda activate neat
 ```
 pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
 ```
-#### 3. Install hawp from ``third-party/hawp``
+#### 3. Install [hawp](https://github.com/cherubicXN/hawp) from ``third-party/hawp``
 ```
 cd third-party/hawp
 pip install -e .

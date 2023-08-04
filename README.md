@@ -68,14 +68,19 @@ pip install 'pyglet<2'
 
 - Step 3: Visualize the 3D wireframe model by
     ```
-    python visualization/show.py --data ../exps/abc-neat-a/{timestamp}/wireframe/{filename}.npz
+    python visualization/show.py --data ../exps/abc-neat-a/{timestamp}/wireframe/{filename}.npz 
     ```
+
+    <img src="docs/abc-debug.png" alt="drawing" width="300"/>
+
     - Currently, the visualization script only supports the local run.
     - The open3d (v0.17) plugin for tensorboard is slow
 
 
-
-
+## DTU and BlendedMVS datasets (TODO)
+- Precomputed results
+- Data preparation
+- Evaluation code
 
 ## Citations
 If you find our work useful in your research, please consider citing

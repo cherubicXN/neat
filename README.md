@@ -4,7 +4,7 @@
 > 
 > Nan Xue, Bin Tan, Yuxi Xiao, Liang Dong, Gui-Song Xia, Tianfu Wu
 > 
-> Preprint
+> [Preprint](https://arxiv.org/abs/2307.10206) / [Code](https://github.com/cherubicXN/neat)
 
 <!-- insert the teaser -->
 <img src='docs/teaser-neat.png'/>

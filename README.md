@@ -18,6 +18,7 @@ git clone https://github.com/cherubicXN/neat.git --recursive
 #### 1. Create a conda env
 ```
 conda create -n neat python=3.10
+conda activate neat
 ```
 #### 2. Install PyTorch
 ```
@@ -28,10 +29,10 @@ pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --e
 cd third-party/hawp
 pip install -e .
 ```
+
+#### 4. Install other dependencies
 ```bash
-conda create -n neat python=3.10
-pip install gputil gitpython pyhocon tqdm matplotlib plotly opencv-python scikit-image trimesh open3d 
-pip install 'pyglet<2'
+pip install -r requirements.txt
 ```
 
 #### 4. Run the experiments under the directory of ``code``

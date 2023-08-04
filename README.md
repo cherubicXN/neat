@@ -37,15 +37,15 @@ pip install 'pyglet<2'
 #### 4. Run the experiments under the directory of ``code``
 
 ## A toy example on a simple object from the [ABC](https://deep-geometry.github.io/abc-dataset/) dataset
-<img src="data/abc/00075213/images/image_0000.png" alt="drawing" width="80"/>
-<img src="data/abc/00075213/images/image_0010.png" alt="drawing" width="80"/>
+<p align="center">
+<img src="data/abc/00075213/images/image_0000.png" alt="drawing" width="80"/><img src="data/abc/00075213/images/image_0010.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0020.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0030.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0040.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0050.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0060.png" alt="drawing" width="80"/>
 <img src="data/abc/00075213/images/image_0080.png" alt="drawing" width="80"/>
-
+</p>
  
 - Step 1: Training or Optimization
     ```
@@ -70,8 +70,9 @@ pip install 'pyglet<2'
     ```
     python visualization/show.py --data ../exps/abc-neat-a/{timestamp}/wireframe/{filename}.npz 
     ```
-
-    <img src="docs/abc-debug.png" alt="drawing" width="300"/>
+    <p align="center">
+    <img src="docs/abc-debug.png" alt="drawing" width="400"/>
+    </p>
 
     - Currently, the visualization script only supports the local run.
     - The open3d (v0.17) plugin for tensorboard is slow

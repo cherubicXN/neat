@@ -2,7 +2,7 @@
 
 > Volumetric Wireframe Parsing from Neural Attraction Fields
 > 
-> [Nan Xue](https://xuenan.net), [Bin Tan](https://icetttb.github.io), [Yuxi Xiao](https://henry123-boy.github.io), Liang Dong, [Gui-Song Xia](https://scholar.google.com/citations?user=SAUCVsEAAAAJ&hl=en), [Tianfu Wu](https://research.ece.ncsu.edu/ivmcl)
+> [Nan Xue](https://xuenan.net), [Bin Tan](https://icetttb.github.io), [Yuxi Xiao](https://henry123-boy.github.io), [Liang Dong](https://www.linkedin.com/in/liang-dong-4a435694), [Gui-Song Xia](https://scholar.google.com/citations?user=SAUCVsEAAAAJ&hl=en), [Tianfu Wu](https://research.ece.ncsu.edu/ivmcl)
 > 
 > 2023
 >

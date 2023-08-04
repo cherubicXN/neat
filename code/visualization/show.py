@@ -382,8 +382,6 @@ def WireframeVisualizer(lines,
     keys = keys + keys[::-1][1:]
     for i,key in enumerate(tqdm(keys)):
         lines2d = project_lines[key]
-        # lines2d[:,0,:] -= [xmin,ymin]
-        # lines2d[:,1,:] -= [xmin,ymin]
 
         fig = plt.figure()
         fig.set_size_inches(width/height,1,forward=False)
@@ -398,8 +396,7 @@ def WireframeVisualizer(lines,
         if show_endpoints:
             plt.scatter(lines2d[:,0,0],lines2d[:,0,1],color='b',s=0.2,edgecolors='none',zorder=5)
             plt.scatter(lines2d[:,1,0],lines2d[:,1,1],color='b',s=0.2,edgecolors='none',zorder=5)
-            # plt.plot(lines2d[:,0,0],lines2d[:,0,1],'o',color='black',markersize=0.1)
-            # plt.plot(lines2d[:,1,0],lines2d[:,1,1],'o',color='black',markersize=0.1)
+
         path = osp.join(render_dir,'{:04d}.pdf'.format(i))
         plt.savefig(path,dpi=width)
         path = osp.join(render_dir,'{:04d}.png'.format(i))
@@ -421,7 +418,8 @@ def WireframeVisualizer(lines,
 
     print('Done! Saved to {}'.format(render_dir+'.mp4'))
     import imageio
-    imageio.mimsave(render_dir+'.gif', [cv2.cvtColor(img,cv2.COLOR_BGR2RGB) for img in rendered_images], fps=30)
+    imageio.mimsave(render_dir+'.gif', [cv2.cvtColor(img,cv2.COLOR_BGR2RGB) for img in rendered_images], 
+        duration=1000/30)
 
     import json
     with open(osp.join(render_dir,'cam.json'),'wb') as f:

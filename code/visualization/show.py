@@ -350,8 +350,8 @@ def WireframeVisualizer(lines,
         vis.run()
         vis.destroy_window()
 
-    # if render_dir is None or WireframeVisualizer.stop:
-    #     return 
+    if render_dir is None or WireframeVisualizer.stop:
+        return 
         
     vis = o3d.visualization.VisualizerWithKeyCallback()
     # vis.create_window()

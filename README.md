@@ -28,6 +28,7 @@ pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --e
 ```
 cd third-party/hawp
 pip install -e .
+cd ../..
 ```
 
 #### 4. Install other dependencies

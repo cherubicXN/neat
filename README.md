@@ -116,7 +116,44 @@ pip install -r requirements.txt
 
 ## DTU and BlendedMVS datasets 
 - Precomputed results can be downloaded from [url-results](https://drive.google.com/file/d/1j988DjFlmVj_c-eH3cWjn46Hk_CL2IYY/view?usp=drive_link) 
-- Processed data can be downloaded from [url-data](https://drive.google.com/file/d/19uyghwcZeWOBt3bP1cr5Vfj_CYO7mkjS/view?usp=drive_link)
+- Processed data can be downloaded from [url-data](https://drive.google.com/file/d/19uyghwcZeWOBt3bP1cr5Vfj_CYO7mkjS/view?usp=drive_link), which are organized with the following structure:
+```
+data
+├── BlendedMVS
+│   ├── process.py
+│   ├── scan11
+│   ├── scan13
+│   ├── scan14
+│   ├── scan15
+│   └── scan9
+├── DTU
+│   ├── bbs.npz
+│   ├── scan105
+│   ├── scan16
+│   ├── scan17
+│   ├── scan18
+│   ├── scan19
+│   ├── scan21
+│   ├── scan22
+│   ├── scan23
+│   ├── scan24
+│   ├── scan37
+│   ├── scan40
+│   └── scan65
+├── abc
+│   ├── 00004981
+│   ├── 00013166
+│   ├── 00017078
+│   └── 00019674
+└── preprocess
+    ├── blender.py
+    ├── extract_monocular_cues.py
+    ├── monodepth.py
+    ├── normalize.py
+    ├── normalize_cameras.py
+    ├── parse_cameras_blendedmvs.py
+    └── readme.md
+```
 - Evaluation code (To be updated)
 
 ## Citations

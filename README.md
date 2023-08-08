@@ -6,7 +6,7 @@
 > 
 > 2023
 >
-> [Preprint](https://arxiv.org/abs/2307.10206) / [Code](https://github.com/cherubicXN/neat) / [Video](https://youtu.be/qtBQYbOpVpc)
+> [Preprint](https://arxiv.org/abs/2307.10206) / [Code](https://github.com/cherubicXN/neat) / [Video](https://youtu.be/qtBQYbOpVpc) / [Processed Data (4.73 GB)](https://drive.google.com/file/d/19uyghwcZeWOBt3bP1cr5Vfj_CYO7mkjS/view?usp=sharing) / [Precomputed Results (3.01 GB)](https://drive.google.com/file/d/1j988DjFlmVj_c-eH3cWjn46Hk_CL2IYY/view?usp=sharing)
 >
 > <img src='docs/teaser-neat.png'/>
 >
@@ -114,10 +114,10 @@ pip install -r requirements.txt
     - The open3d (v0.17) plugin for tensorboard is slow
 
 
-## DTU and BlendedMVS datasets (TODO)
-- Precomputed results
-- Data preparation
-- Evaluation code
+## DTU and BlendedMVS datasets 
+- Precomputed results can be downloaded from [url-results](https://drive.google.com/file/d/1j988DjFlmVj_c-eH3cWjn46Hk_CL2IYY/view?usp=drive_link) 
+- Processed data can be downloaded from [url-data](https://drive.google.com/file/d/19uyghwcZeWOBt3bP1cr5Vfj_CYO7mkjS/view?usp=drive_link)
+- Evaluation code (To be updated)
 
 ## Citations
 If you find our work useful in your research, please consider citing

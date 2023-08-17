@@ -11,10 +11,10 @@ class WireframeGraph:
                 edge_weights: torch.Tensor, 
                 frame_width: int, 
                 frame_height: int):
-        self.vertices = vertices.clone()
-        self.v_confidences = v_confidences.clone()
-        self.edges = edges.clone()
-        self.weights = edge_weights.clone()
+        self.vertices = vertices.clone().detach()
+        self.v_confidences = v_confidences.clone().detach()
+        self.edges = edges.clone().detach()
+        self.weights = edge_weights.clone().detach()
         self.frame_width = frame_width
         self.frame_height = frame_height
     

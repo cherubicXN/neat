@@ -103,7 +103,7 @@ def WireframeVisualizer(points3d_list, render_dir = None, rx=0, ry=0,rz=0,t=0,po
     mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(
     size=0.6, origin=[0,0,0])
     vis = WireframeVisualizer.vis
-    vis.create_window(height=512,width=512, left=0, top=0, visible=True, window_name='Wireframe Visualizer')
+    vis.create_window(height=1024,width=1024, left=0, top=0, visible=True, window_name='Wireframe Visualizer')
     # vis.create_window()
     render_option = vis.get_render_option()
     vis.add_geometry(
@@ -184,7 +184,7 @@ def WireframeVisualizer(points3d_list, render_dir = None, rx=0, ry=0,rz=0,t=0,po
 
     print('Done! Saved to {}'.format(render_dir+'.mp4'))
     import imageio
-    imageio.mimsave(render_dir+'.gif', [cv2.cvtColor(img,cv2.COLOR_BGR2RGB) for img in rendered_images], fps=30)
+    imageio.mimsave(render_dir+'.gif', [cv2.cvtColor(img,cv2.COLOR_BGR2RGB) for img in rendered_images], duration=20)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

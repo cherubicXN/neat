@@ -85,10 +85,7 @@ pip install -r requirements.txt
 
 - Step 1: Training or Optimization
     ```
-    python training/exp_runner.py \
-        --conf confs/abc-debug/abc-neat-a.conf \
-        --nepoch 2000 \ # Number of epochs for training/optimization
-        --tbvis # Use tensorboard to visualize the 3D junctions
+    python training/exp_runner.py --conf confs/abc-neat-a.conf --nepoch 2000 --tbvis # --tbvis will use tensorboard for visualization
     ```
 - Step 2: Finalize the NEAT wireframe model
     ```

@@ -237,6 +237,9 @@ class VolSDFTrainRunner():
         if kwargs['use_tb']:
             self.tb_writer = SummaryWriter(os.path.join(self.expdir, self.timestamp, 'logs'))
             self.tb_logdir = os.path.join(self.expdir, self.timestamp, 'logs')
+        else:
+            self.tb_writer = None
+            self.tb_logdir = None
 
 
     def commit_log(self, msg='update log'):
@@ -339,9 +342,10 @@ class VolSDFTrainRunner():
 
                 torch.save(global_junctions, os.path.join(self.junctions_path, str(epoch) + '.pth'))
 
-                self.tb_writer.add_3d('junctions3d',
-                    to_dict_batch([o3d_obj]),
-                    step=epoch)
+                if self.tb_writer:
+                    self.tb_writer.add_3d('junctions3d',
+                        to_dict_batch([o3d_obj]),
+                        step=epoch)
                 # with self.tb_writer.as_default():
                 #     summary.add_3d('junctions', 
                 #         to_dict_batch([o3d.utility.Vector3dVector(global_junctions.cpu().numpy())]),

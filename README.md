@@ -1,10 +1,10 @@
-## Volumetric Wireframe Parsing from Neural Attraction Fields
+## NEAT: Distilling 3D Wireframes from Neural Attraction Fields (CVPR 2024)
 
-> Volumetric Wireframe Parsing from Neural Attraction Fields
+> NEAT: Distilling 3D Wireframes from Neural Attraction Fields
 > 
-> [Nan Xue](https://xuenan.net), [Bin Tan](https://icetttb.github.io), [Yuxi Xiao](https://henry123-boy.github.io), [Liang Dong](https://www.linkedin.com/in/liang-dong-4a435694), [Gui-Song Xia](https://scholar.google.com/citations?user=SAUCVsEAAAAJ&hl=en), [Tianfu Wu](https://research.ece.ncsu.edu/ivmcl)
+> [Nan Xue](https://xuenan.net), [Bin Tan](https://icetttb.github.io), [Yuxi Xiao](https://henry123-boy.github.io), [Liang Dong](https://www.linkedin.com/in/liang-dong-4a435694), [Gui-Song Xia](https://scholar.google.com/citations?user=SAUCVsEAAAAJ&hl=en), [Tianfu Wu](https://research.ece.ncsu.edu/ivmcl), [Yujun Shen](https://shenyujun.github.io)
 > 
-> 2023
+> 2024
 >
 > [Preprint](https://arxiv.org/abs/2307.10206) / [Code](https://github.com/cherubicXN/neat) / [Video](https://youtu.be/qtBQYbOpVpc) / [Processed Data (4.73 GB)](https://drive.google.com/file/d/19uyghwcZeWOBt3bP1cr5Vfj_CYO7mkjS/view?usp=sharing) / [Precomputed Results (3.01 GB)](https://drive.google.com/file/d/1j988DjFlmVj_c-eH3cWjn46Hk_CL2IYY/view?usp=sharing)
 >

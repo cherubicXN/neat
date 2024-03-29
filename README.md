@@ -1,6 +1,6 @@
 ## NEAT: Distilling 3D Wireframes from Neural Attraction Fields (CVPR 2024)
 
-> NEAT: Distilling 3D Wireframes from Neural Attraction Fields
+> NEAT: Distilling 3D Wireframes from Neural Attraction Fields (To be updated)
 > 
 > [Nan Xue](https://xuenan.net), [Bin Tan](https://icetttb.github.io), [Yuxi Xiao](https://henry123-boy.github.io), [Liang Dong](https://www.linkedin.com/in/liang-dong-4a435694), [Gui-Song Xia](https://scholar.google.com/citations?user=SAUCVsEAAAAJ&hl=en), [Tianfu Wu](https://research.ece.ncsu.edu/ivmcl), [Yujun Shen](https://shenyujun.github.io)
 > 
@@ -31,14 +31,6 @@
 >    <img src="figures/bmvs/neat-14.gif" alt="drawing" width="128"/>
 >    <img src="figures/bmvs/neat-15.gif" alt="drawing" width="128"/>
 > </p>
-
-## Acknowledgement
-This project is built on [volsdf](https://github.com/lioryariv/volsdf). We also thank the four anonymous reviewers for their feedback on the paper writing, listed as follows (copied from the CMT system):
-- *"The proposed method is novel and very interesting and the authors' rebuttal address some of my concerns. However, as pointed out by other reviewers, many parts need to be revised to clarify the proposed method, and another careful review is necessary after the revisions. Therefore, my final rating is Borderline Reject."* by Reviewer 2
-- *"After reviewing the opinions of other reviewers and reading the rebuttal, I have observed common issues in terms of writing and explanation. Despite my experience of over ten years in the field of 3D vision, I found it challenging to follow the submission, which is its main weakness.
-However, during the rebuttal, the authors made efforts to address most of the concerns raised, including the completion metric. They compared their approaches with more recent research works and demonstrated superior quantitative performance compared to the comparison methods. Moreover, I find the idea of reconstructing a wireframe using implicit fields to be a novel and intriguing research direction. Considering this work as a pioneering effort, I am inclined to have a positive stance on it."* by Reviewer 3
-- *"After reading the other reviews and the authors' responses, I still lean on rejection. As pointed out by all the reviewers, the paper needs significant rework on writing. Even after reading the authors' feedback, some key details are still lacking or confusing. I do not think the paper in its current form is ready for publication, even adding the explanation provided in the authors' response. Quality-wise, although some quantitative improvement is achieved, the visual quality does not improve much. In addition, there exist many spurious strokes in almost every result, making it difficult to use in real applications -- additional errors could be introduced due to the spurious artifacts."* by Reviewer 4
-- *"After reading rebuttals and other reviews, I think this paper is not ready to be published as its writing need significant revisions. The overall idea nad method is novel and interesting, while the current draft has too many unclear points and I sincerely believe this paper could be hugely improved by revision."* by Reviewer 5
 
 
 ## Installation 
@@ -162,7 +154,9 @@ If you find our work useful in your research, please consider citing
                   Yuxi Xiao and
                   Liang Dong and
                   Gui{-}Song Xia and
-                  Tianfu Wu},
+                  Tianfu Wu and
+                  Yujun Shen
+                 },
   title        = {Volumetric Wireframe Parsing from Neural Attraction Fields},
   journal      = {CoRR},
   volume       = {abs/2307.10206},
@@ -173,3 +167,7 @@ If you find our work useful in your research, please consider citing
   eprint       = {2307.10206}
 }
 ```
+
+## Acknowledgement
+This project is built on [volsdf](https://github.com/lioryariv/volsdf). We also thank the four anonymous reviewers for their feedback on the paper writing, listed as follows (copied from the CMT system):
+
